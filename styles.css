@@ -1,0 +1,81 @@
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #f4f8fb;
+    color: #222;
+}
+.navbar {
+    background: #005ca9 !important; /* Akdeniz blue */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.navbar .navbar-brand {
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+.navbar .btn-outline-light {
+    border-width: 2px;
+    margin-left: 4px;
+    margin-right: 4px;
+    color: #fff !important;
+    border-color: #fff !important;
+    background: transparent;
+    transition: background 0.2s, color 0.2s;
+}
+.navbar .btn-outline-light.active, .navbar .btn-outline-light:focus, .navbar .btn-outline-light:hover {
+    background: #fff !important;
+    color: #005ca9 !important;
+    border-color: #fff !important;
+}
+.card {
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(0,92,169,0.08);
+    border: none;
+}
+.card-header {
+    background: #005ca9;
+    color: #fff;
+    border-radius: 12px 12px 0 0;
+    font-weight: 500;
+    font-size: 1.2rem;
+}
+.btn-primary {
+    background: #005ca9;
+    border-color: #005ca9;
+}
+.btn-primary:hover, .btn-primary:focus {
+    background: #003e6b;
+    border-color: #003e6b;
+}
+.table-primary {
+    background: #e3f0fa !important;
+    color: #005ca9 !important;
+}
+hr {
+    border-top: 1px solid #005ca9;
+}
+.akdeniz-logo {
+    height: 40px;
+    margin-right: 12px;
+}
+/* Login page custom */
+.login-bg {
+    background: linear-gradient(135deg, #005ca9 0%, #e3f0fa 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.login-card {
+    max-width: 400px;
+    margin: auto;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0,92,169,0.12);
+    border: none;
+}
+.login-card .card-header {
+    background: #005ca9;
+    color: #fff;
+    border-radius: 16px 16px 0 0;
+    text-align: center;
+    font-size: 1.3rem;
+    font-weight: 600;
+} 
