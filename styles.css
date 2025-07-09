@@ -1,15 +1,29 @@
 body {
     font-family: 'Segoe UI', Arial, sans-serif;
-    background: #f4f8fb;
+    background: linear-gradient(135deg, #f4f8fb 0%, #e3f0fa 100%);
     color: #222;
+    min-height: 100vh;
 }
 .navbar {
-    background: #005ca9 !important; /* Akdeniz blue */
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    background: #005ca9 !important;
+    box-shadow: 0 4px 24px rgba(0,92,169,0.10);
+    min-height: 70px;
 }
 .navbar .navbar-brand {
     font-weight: bold;
     letter-spacing: 1px;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+}
+.navbar .akdeniz-logo {
+    width: 56px;
+    height: 56px;
+    margin: 0 12px 0 0;
+    border-radius: 12px;
+    border: 2.5px solid #0d6efd;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,92,169,0.10);
 }
 .navbar .btn-outline-light {
     border-width: 2px;
@@ -18,81 +32,169 @@ body {
     color: #fff !important;
     border-color: #fff !important;
     background: transparent;
-    transition: background 0.2s, color 0.2s;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+    border-radius: 8px;
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(0,92,169,0.08);
 }
 .navbar .btn-outline-light.active, .navbar .btn-outline-light:focus, .navbar .btn-outline-light:hover {
     background: #fff !important;
     color: #005ca9 !important;
     border-color: #fff !important;
-}
-.navbar .akdeniz-logo {
-    width: 40px;
-    height: 40px;
-    display: inline-block;
-    margin: 0 8px 0 0;
-    vertical-align: middle;
-    background: #fff;
-    border-radius: 8px;
-    border: 2px solid #0d6efd;
+    box-shadow: 0 4px 16px rgba(0,92,169,0.12);
 }
 .card {
-    border-radius: 12px;
-    box-shadow: 0 4px 24px rgba(0,92,169,0.08);
+    border-radius: 18px;
+    box-shadow: 0 6px 32px rgba(0,92,169,0.10);
     border: none;
+    transition: box-shadow 0.2s;
+}
+.card:hover {
+    box-shadow: 0 12px 48px rgba(0,92,169,0.16);
 }
 .card-header {
     background: #005ca9;
     color: #fff;
-    border-radius: 12px 12px 0 0;
-    font-weight: 500;
-    font-size: 1.2rem;
+    border-radius: 18px 18px 0 0;
+    font-weight: 600;
+    font-size: 1.25rem;
 }
 .btn-primary {
-    background: #005ca9;
+    background: linear-gradient(90deg, #005ca9 60%, #0d6efd 100%);
     border-color: #005ca9;
+    border-radius: 8px;
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(0,92,169,0.08);
+    transition: background 0.2s, box-shadow 0.2s;
 }
 .btn-primary:hover, .btn-primary:focus {
-    background: #003e6b;
+    background: linear-gradient(90deg, #003e6b 60%, #0d6efd 100%);
     border-color: #003e6b;
+    box-shadow: 0 4px 16px rgba(0,92,169,0.12);
 }
 .table-primary {
     background: #e3f0fa !important;
     color: #005ca9 !important;
 }
+.table {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,92,169,0.06);
+}
+.table th, .table td {
+    vertical-align: middle !important;
+}
+.table-striped > tbody > tr:nth-of-type(odd) {
+    background-color: #f7fbff;
+}
+.table-hover tbody tr:hover {
+    background-color: #e3f0fa;
+    transition: background 0.2s;
+}
 hr {
-    border-top: 1px solid #005ca9;
+    border-top: 1.5px solid #005ca9;
 }
-.akdeniz-logo {
-    width: 100px;
-    height: 100px;
-    object-fit: contain;
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-    background: #fff;
-    border-radius: 8px;
-    border: 2px solid #0d6efd;
+.alert {
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(0,92,169,0.08);
+    font-size: 1.05rem;
 }
-/* Login page custom */
+.alert-success {
+    background: linear-gradient(90deg, #e6f9f0 60%, #d1f7e7 100%);
+    color: #1a7f4c;
+}
+.alert-danger {
+    background: linear-gradient(90deg, #ffeaea 60%, #ffe3e3 100%);
+    color: #b02a37;
+}
+.alert-info {
+    background: linear-gradient(90deg, #e3f0fa 60%, #f4f8fb 100%);
+    color: #005ca9;
+}
+input.form-control, select.form-select, textarea.form-control {
+    border-radius: 10px;
+    border: 1.5px solid #b6d4fe;
+    font-size: 1.08rem;
+    padding: 0.7em 1em;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+input.form-control:focus, select.form-select:focus, textarea.form-control:focus {
+    border-color: #005ca9;
+    box-shadow: 0 0 0 2px #e3f0fa;
+}
+/* Giriş ekranı arka planı */
 .login-bg {
-    background: linear-gradient(135deg, #005ca9 0%, #e3f0fa 100%);
     min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
+    background: linear-gradient(135deg, #e3f0fa 0%, #f4f8fb 100%);
 }
+/* Giriş kutusu */
 .login-card {
-    max-width: 400px;
-    margin: auto;
-    border-radius: 16px;
-    box-shadow: 0 8px 32px rgba(0,92,169,0.12);
+    width: 100%;
+    max-width: 370px;
+    margin: 0 auto;
+    border-radius: 22px;
+    box-shadow: 0 8px 40px rgba(0,92,169,0.18);
+    background: #fff;
+    padding: 0;
+    overflow: hidden;
     border: none;
+    animation: loginFadeIn 0.7s cubic-bezier(.4,2,.6,1) 1;
+}
+@keyframes loginFadeIn {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Logo ve başlık hizalama */
+.login-card .akdeniz-logo {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 8px;
+    width: 90px;
+    height: 90px;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 2px 12px rgba(0,92,169,0.10);
 }
 .login-card .card-header {
-    background: #005ca9;
-    color: #fff;
-    border-radius: 16px 16px 0 0;
     text-align: center;
-    font-size: 1.3rem;
-    font-weight: 600;
+    background: linear-gradient(90deg, #005ca9 60%, #0d6efd 100%);
+    color: #fff;
+    border-radius: 22px 22px 0 0;
+    padding: 2rem 1.5rem 1rem 1.5rem;
+    border: none;
+}
+.login-card .card-body {
+    padding: 2rem 1.5rem 1.5rem 1.5rem;
+}
+
+/* Mobil uyum */
+@media (max-width: 480px) {
+    .login-card {
+        max-width: 98vw;
+        border-radius: 12px;
+    }
+    .login-card .akdeniz-logo {
+        width: 60px;
+        height: 60px;
+        border-radius: 10px;
+    }
+    .login-card .card-header {
+        padding: 1.2rem 0.7rem 0.7rem 0.7rem;
+        border-radius: 12px 12px 0 0;
+    }
+    .login-card .card-body {
+        padding: 1.2rem 0.7rem 1rem 0.7rem;
+    }
+}
+@media (max-width: 768px) {
+    .navbar .akdeniz-logo { width: 40px; height: 40px; }
+    .navbar .navbar-brand { font-size: 1.1rem; }
+    .card { border-radius: 12px; }
+    .card-header { border-radius: 12px 12px 0 0; font-size: 1.05rem; }
+    .table { font-size: 0.97rem; }
 } 

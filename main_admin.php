@@ -13,6 +13,11 @@ if (!file_exists($usersFile)) {
         ['id' => 1, 'username' => 'mainadmin', 'role' => 'MainAdmin'],
         ['id' => 2, 'username' => 'altadmin', 'role' => 'Admin'],
         ['id' => 3, 'username' => 'teknikpersonel', 'role' => 'TeknikPersonel'],
+        ['id' => 4, 'username' => 'teknisyen.ahmet', 'role' => 'TeknikPersonel'],
+        ['id' => 5, 'username' => 'teknisyen.ayse', 'role' => 'TeknikPersonel'],
+        ['id' => 6, 'username' => 'teknisyen.mehmet', 'role' => 'TeknikPersonel'],
+        ['id' => 7, 'username' => 'teknisyen.elif', 'role' => 'TeknikPersonel'],
+        ['id' => 8, 'username' => 'teknisyen.omer', 'role' => 'TeknikPersonel']
     ], JSON_UNESCAPED_UNICODE));
 }
 $users = json_decode(file_get_contents($usersFile), true);
@@ -141,7 +146,7 @@ $teknikPersonel = array_filter($users, function($u){ return $u['role']==='Teknik
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
   <div class="container-fluid">
     <a class="navbar-brand d-flex align-items-center" href="index.php">
-      <img src="logo.png" class="akdeniz-logo" alt="Akdeniz Üniversitesi">
+      <img src="https://upload.wikimedia.org/wikipedia/tr/d/dc/Akdeniz_%C3%9Cniversitesi_logosu.IMG_0838.png" class="akdeniz-logo" alt="Akdeniz Üniversitesi">
       <span>Akdeniz Üniversitesi</span>
     </a>
     <ul class="navbar-nav ms-3">
@@ -419,11 +424,8 @@ document.getElementById('dateEnd').addEventListener('change', filterTable);
                 <label class="form-label">Teknik Personel</label>
                 <select name="assign_personnel" class="form-control" required>
                     <?php foreach ($personnel as $p): ?>
-                        <option value="<?= htmlspecialchars($p['username']) ?>" <?= (isset($altadminJobCount[$p['username']]) && $altadminJobCount[$p['username']] >= 10) ? 'disabled' : '' ?>>
+                        <option value="<?= htmlspecialchars($p['username']) ?>">
                             <?= htmlspecialchars($p['username']) ?>
-                            <?php if (isset($altadminJobCount[$p['username']])): ?>
-                                (<?= $altadminJobCount[$p['username']] ?>/10)
-                            <?php endif; ?>
                         </option>
                     <?php endforeach; ?>
                 </select>

@@ -7,9 +7,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (($username === 'mainadmin' && $password === 'main1234') ||
         ($username === 'altadmin' && $password === 'alt1234') ||
         ($username === 'teknikpersonel' && $password === 'teknik1234') ||
-        ($username === 'user' && $password === 'user123')) {
+        ($username === 'admin' && $password === 'admin1234')) {
         $_SESSION['user'] = $username;
-        header('Location: index.php');
+        // Role göre yönlendirme
+        if ($username === 'mainadmin') {
+            header('Location: main_admin.php');
+        } elseif ($username === 'altadmin' || $username === 'admin') {
+            header('Location: admin.php');
+        } elseif ($username === 'teknikpersonel') {
+            header('Location: admin.php');
+        }
         exit;
     } else {
         $error = 'Kullanıcı adı veya şifre hatalı.';
@@ -27,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body class="login-bg">
     <div class="card login-card">
         <div class="card-header">
-            <img src="https://upload.wikimedia.org/wikipedia/tr/3/3d/Akdeniz_%C3%9Cniversitesi_logo.png" class="akdeniz-logo mb-2" alt="Akdeniz Üniversitesi" style="width: 100px; height: 100px; object-fit: contain;">
+            <img src="https://upload.wikimedia.org/wikipedia/tr/d/dc/Akdeniz_%C3%9Cniversitesi_logosu.IMG_0838.png" class="akdeniz-logo mb-2" alt="Akdeniz Üniversitesi" style="width: 100px; height: 100px; object-fit: contain;">
             <h5 class="mt-2 mb-0">Akdeniz Üniversitesi Arıza Takip Sistemi</h5>
         </div>
         <div class="card-body">

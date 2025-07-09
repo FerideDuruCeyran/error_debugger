@@ -10,19 +10,38 @@ $filter = $_GET['filter'] ?? '';
 $updateMsg = '';
 $successMsg = $errorMsg = '';
 
+// Bildirim işlemleri için fonksiyon
+function addNotification($user, $msg) {
+    $file = 'bildirimler/notifications_' . $user . '.json';
+    if (!is_dir('bildirimler')) mkdir('bildirimler');
+    $list = file_exists($file) ? json_decode(file_get_contents($file), true) : [];
+    $list[] = [ 'msg' => $msg, 'date' => date('Y-m-d H:i') ];
+    file_put_contents($file, json_encode($list, JSON_UNESCAPED_UNICODE));
+}
 // Durum güncelleme
 if (isset($_POST['update_status'])) {
     $trackingNo = $_POST['trackingNo'] ?? '';
     $newStatus = $_POST['new_status'] ?? '';
     if ($trackingNo && $newStatus) {
-        // Burada veritabanı/güncelleme işlemi yapılmalı
         // updateFaultStatus($trackingNo, $newStatus);
         $successMsg = 'Durum başarıyla güncellendi.';
+        // Bildirim: Arıza sahibine
+        if (file_exists(PROBLEM_LOG_FILE)) {
+            $lines = file(PROBLEM_LOG_FILE, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            foreach ($lines as $line) {
+                $entry = json_decode($line, true);
+                if ($entry && isset($entry['trackingNo']) && $entry['trackingNo'] === $trackingNo) {
+                    if (!empty($entry['username'])) {
+                        addNotification($entry['username'], 'Arızanızın durumu "' . $newStatus . '" olarak güncellendi.');
+                    }
+                    break;
+                }
+            }
+        }
     } else {
         $errorMsg = 'Bir hata oluştu. Lütfen tekrar deneyin.';
     }
 }
-
 // Teknisyen atama işlemi (sadece altadmin için)
 if ($_SESSION['user'] === 'altadmin' && isset($_POST['assign_tech'], $_POST['assign_tracking'], $_POST['assign_personnel'])) {
     $assignTracking = trim($_POST['assign_tracking']);
@@ -34,6 +53,8 @@ if ($_SESSION['user'] === 'altadmin' && isset($_POST['assign_tech'], $_POST['ass
             if ($entry && isset($entry['trackingNo']) && $entry['trackingNo'] === $assignTracking) {
                 $entry['assignedTo'] = $assignPersonnel;
                 $lines[$i] = json_encode($entry, JSON_UNESCAPED_UNICODE);
+                // Bildirim: Teknisyene
+                addNotification($assignPersonnel, 'Yeni bir arıza size atandı (Takip No: ' . $assignTracking . ').');
                 break;
             }
         }
@@ -80,16 +101,17 @@ if (file_exists(PROBLEM_LOG_FILE)) {
 }
 $page = 'admin';
 
-// Bildirim örneği (gerçek uygulamada dinamik olacak)
+// Bildirim gösterimi
 $notification = '';
-if ($_SESSION['user'] === 'user') {
-    $notification = 'Arızanız onaylandı!';
-} elseif ($_SESSION['user'] === 'teknikpersonel') {
-    $notification = 'Yeni bir arıza size atandı!';
-} elseif ($_SESSION['user'] === 'admin') {
-    $notification = 'Sistemde 2 yeni arıza bildirimi var.';
-} elseif ($_SESSION['user'] === 'mainadmin') {
-    $notification = 'Kullanıcı yönetimi için yeni talepler var.';
+$notifFile = 'bildirimler/notifications_' . $_SESSION['user'] . '.json';
+if (file_exists($notifFile)) {
+    $notifs = json_decode(file_get_contents($notifFile), true);
+    if (!empty($notifs)) {
+        $notification = $notifs[0]['msg'];
+        // Bildirimi gösterdikten sonra sil
+        array_shift($notifs);
+        file_put_contents($notifFile, json_encode($notifs, JSON_UNESCAPED_UNICODE));
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -104,7 +126,7 @@ if ($_SESSION['user'] === 'user') {
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
   <div class="container-fluid">
     <a class="navbar-brand d-flex align-items-center" href="index.php">
-      <img src="logo.png" class="akdeniz-logo" alt="Akdeniz Üniversitesi">
+      <img src="https://upload.wikimedia.org/wikipedia/tr/d/dc/Akdeniz_%C3%9Cniversitesi_logosu.IMG_0838.png" class="akdeniz-logo" alt="Akdeniz Üniversitesi">
       <span>Akdeniz Üniversitesi</span>
     </a>
     <div>

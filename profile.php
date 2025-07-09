@@ -43,7 +43,7 @@ if (isset($_POST['change_password'])) {
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
   <div class="container-fluid">
     <a class="navbar-brand d-flex align-items-center" href="index.php">
-      <img src="logo.png" class="akdeniz-logo" alt="Akdeniz Üniversitesi">
+      <img src="https://upload.wikimedia.org/wikipedia/tr/d/dc/Akdeniz_%C3%9Cniversitesi_logosu.IMG_0838.png" class="akdeniz-logo" alt="Akdeniz Üniversitesi">
       <span>Akdeniz Üniversitesi</span>
     </a>
   </div>
@@ -119,13 +119,18 @@ if (isset($_POST['change_password'])) {
                 </div>
             <?php endif; ?>
             <?php if ($currentUser && $currentUser['role'] === 'teknikpersonel'): ?>
+                <?php $tab = $_GET['tab'] ?? 'ozet'; ?>
+                <ul class="nav nav-tabs mb-3">
+                  <li class="nav-item"><a class="nav-link<?= $tab=='ozet'?' active':'' ?>" href="profile.php?tab=ozet">Performans Özeti</a></li>
+                  <li class="nav-item"><a class="nav-link<?= $tab=='arizalar'?' active':'' ?>" href="profile.php?tab=arizalar">Atanan Arızalar</a></li>
+                </ul>
+                <?php if ($tab=='ozet'): ?>
                 <div class="card shadow-sm mb-4">
                     <div class="card-body">
-                        <h5 class="mb-3">Atanan Arızalarım & Performans</h5>
+                        <h5 class="mb-3">Performans Özeti</h5>
                         <?php
                         $logFile = defined('PROBLEM_LOG_FILE') ? PROBLEM_LOG_FILE : 'problem_log.txt';
                         $assigned = $completed = 0;
-                        $rows = '';
                         if (file_exists($logFile)) {
                             $lines = file($logFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
                             foreach ($lines as $line) {
@@ -133,6 +138,28 @@ if (isset($_POST['change_password'])) {
                                 if ($entry && isset($entry['assigned']) && $entry['assigned'] === $currentUser['username']) {
                                     $assigned++;
                                     if (($entry['status'] ?? '') === 'Tamamlandı') $completed++;
+                                }
+                            }
+                        }
+                        ?>
+                        <div class="mb-2">
+                            <b>Toplam Atanan Arıza:</b> <?= $assigned ?> <br>
+                            <b>Tamamlanan Arıza:</b> <?= $completed ?>
+                        </div>
+                    </div>
+                </div>
+                <?php elseif ($tab=='arizalar'): ?>
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h5 class="mb-3">Atanan Arızalarım</h5>
+                        <?php
+                        $logFile = defined('PROBLEM_LOG_FILE') ? PROBLEM_LOG_FILE : 'problem_log.txt';
+                        $rows = '';
+                        if (file_exists($logFile)) {
+                            $lines = file($logFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+                            foreach ($lines as $line) {
+                                $entry = json_decode($line, true);
+                                if ($entry && isset($entry['assigned']) && $entry['assigned'] === $currentUser['username']) {
                                     $rows .= '<tr>';
                                     $rows .= '<td>' . htmlspecialchars($entry['trackingNo'] ?? '') . '</td>';
                                     $rows .= '<td>' . htmlspecialchars($entry['description'] ?? '') . '</td>';
@@ -144,10 +171,6 @@ if (isset($_POST['change_password'])) {
                             }
                         }
                         ?>
-                        <div class="mb-2">
-                            <b>Toplam Atanan Arıza:</b> <?= $assigned ?> <br>
-                            <b>Tamamlanan Arıza:</b> <?= $completed ?>
-                        </div>
                         <table class="table table-bordered table-striped">
                             <thead>
                                 <tr><th>Takip No</th><th>Açıklama</th><th>Durum</th><th>Tarih</th><th>Mesajlaş</th></tr>
@@ -156,6 +179,7 @@ if (isset($_POST['change_password'])) {
                         </table>
                     </div>
                 </div>
+                <?php endif; ?>
             <?php endif; ?>
             <?php if ($currentUser && in_array($currentUser['role'], ['admin','mainadmin'])): ?>
                 <div class="card shadow-sm mb-4">
