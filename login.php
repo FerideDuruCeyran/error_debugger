@@ -4,9 +4,10 @@ $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = $_POST['username'] ?? '';
     $password = $_POST['password'] ?? '';
-    if (($username === 'admin' && $password === '1234') ||
-        ($username === 'user' && $password === 'user123') ||
-        ($username === 'mainadmin' && $password === 'main1234')) {
+    if (($username === 'mainadmin' && $password === 'main1234') ||
+        ($username === 'altadmin' && $password === 'alt1234') ||
+        ($username === 'teknikpersonel' && $password === 'teknik1234') ||
+        ($username === 'user' && $password === 'user123')) {
         $_SESSION['user'] = $username;
         header('Location: index.php');
         exit;
@@ -26,8 +27,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body class="login-bg">
     <div class="card login-card">
         <div class="card-header">
-            <img src="https://upload.wikimedia.org/wikipedia/tr/3/3d/Akdeniz_%C3%9Cniversitesi_logo.png" class="akdeniz-logo" alt="Akdeniz Üniversitesi">
-            Akdeniz Üniversitesi Arıza Takip Sistemi
+            <img src="https://upload.wikimedia.org/wikipedia/tr/3/3d/Akdeniz_%C3%9Cniversitesi_logo.png" class="akdeniz-logo mb-2" alt="Akdeniz Üniversitesi" style="width: 100px; height: 100px; object-fit: contain;">
+            <h5 class="mt-2 mb-0">Akdeniz Üniversitesi Arıza Takip Sistemi</h5>
         </div>
         <div class="card-body">
             <form method="post">
