@@ -91,23 +91,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 .login-card {
   border-radius: 32px;
   box-shadow: 0 4px 24px rgba(0,92,169,0.13);
-  border: 2px solid #e3f0fa;
-  transition: box-shadow 0.22s, transform 0.16s, border-color 0.18s, border-radius 0.22s;
+  border: none;
+  transition: box-shadow 0.22s, transform 0.16s, border-radius 0.22s;
   background: #fff;
 }
 .login-card:hover {
   box-shadow: 0 12px 36px rgba(0,92,169,0.18);
-  transform: translateY(-6px) scale(1.025);
-  border-color: #0d6efd;
+  transform: translateY(-6px) scale(1.035);
   border-radius: 48px;
 }
 body.dark-mode .login-card {
   background: #232a3a;
   color: #e3e3e3;
-  border-color: #333;
+  border: none;
 }
 body.dark-mode .login-card:hover {
-  border-color: #0d6efd;
   box-shadow: 0 12px 36px rgba(13,110,253,0.18);
 }
 </style>
