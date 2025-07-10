@@ -20,18 +20,32 @@ $successMsg = $errorMsg = '';
 if (isset($_POST['update_trackingNo'], $_POST['update_status'])) {
     $trackingNo = $_POST['update_trackingNo'];
     $newStatus = $_POST['update_status'];
+    $updated = false;
     if (file_exists(PROBLEM_LOG_FILE)) {
         $lines = file(PROBLEM_LOG_FILE, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
         foreach ($lines as $i => $line) {
             $entry = json_decode($line, true);
-            if ($entry && isset($entry['trackingNo']) && $entry['trackingNo'] === $trackingNo && isset($entry['assignedTo']) && $entry['assignedTo'] === $currentUser['username']) {
+            $assignedUser = $entry['assignedTo'] ?? ($entry['assigned'] ?? null);
+            if (
+                $entry &&
+                isset($entry['trackingNo']) && $entry['trackingNo'] === $trackingNo &&
+                $assignedUser &&
+                mb_strtolower(trim($assignedUser)) === mb_strtolower(trim($currentUser['username']))
+            ) {
                 $entry['status'] = $newStatus;
                 $lines[$i] = json_encode($entry, JSON_UNESCAPED_UNICODE);
-                $successMsg = 'Durum başarıyla güncellendi.';
+                $updated = true;
                 break;
             }
         }
         file_put_contents(PROBLEM_LOG_FILE, implode("\n", $lines) . "\n");
+        if ($updated) {
+            $successMsg = 'Durum başarıyla güncellendi.';
+        } else {
+            $errorMsg = 'Güncelleme başarısız. Kayıt bulunamadı veya yetkiniz yok.';
+        }
+    } else {
+        $errorMsg = 'Kayıt dosyası bulunamadı.';
     }
 }
 ?>
@@ -79,6 +93,12 @@ if (isset($_POST['update_trackingNo'], $_POST['update_status'])) {
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>
             </div>
         <?php endif; ?>
+        <?php if ($errorMsg): ?>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <?= $errorMsg ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>
+            </div>
+        <?php endif; ?>
         <div class="mb-3">
           <input type="text" id="tableSearch" class="form-control" placeholder="Tabloda ara...">
         </div>
@@ -94,7 +114,8 @@ if (isset($_POST['update_trackingNo'], $_POST['update_status'])) {
                 $lines = file($logFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
                 foreach ($lines as $line) {
                     $entry = json_decode($line, true);
-                    if ($entry && isset($entry['assignedTo']) && trim($entry['assignedTo']) === trim($currentUser['username'])) {
+                    $assignedUser = $entry['assignedTo'] ?? ($entry['assigned'] ?? null);
+                    if ($entry && $assignedUser && mb_strtolower(trim($assignedUser)) === mb_strtolower(trim($currentUser['username']))) {
                         echo '<tr>';
                         echo '<td>' . htmlspecialchars($entry['trackingNo'] ?? '') . '</td>';
                         echo '<td>';
@@ -237,8 +258,7 @@ function closeDescPopup() {
         <div class="mb-3">
             <label class="form-label">Durum</label>
             <select name="update_status" id="update_status" class="form-select" required>
-                <option value="Bekliyor">Bekliyor</option>
-                <option value="Onaylandı">Onaylandı</option>
+                <option value="Başlanmadı">Başlanmadı</option>
                 <option value="Tamamlandı">Tamamlandı</option>
             </select>
         </div>

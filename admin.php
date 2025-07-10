@@ -281,7 +281,7 @@ if (file_exists(PROBLEM_LOG_FILE)) {
             <tr>
                 <td><?= htmlspecialchars($p['trackingNo']) ?></td>
                 <td><?= htmlspecialchars($p['faultType']) ?></td>
-                <td><?= htmlspecialchars($p['title']) ?></td>
+                <td><?= htmlspecialchars($p['title'] ?? '-') ?></td>
                 <td><?= htmlspecialchars($p['department']) ?></td>
                 <td><?= htmlspecialchars($p['specs'] ?? '-') ?></td>
                 <td><?= htmlspecialchars($p['contact'] ?? '-') ?></td>
