@@ -1,6 +1,29 @@
 <?php
 session_start();
 $page = 'index';
+if (isset($_SESSION['user'])) {
+    $usersFile = 'users.json';
+    $users = file_exists($usersFile) ? json_decode(file_get_contents($usersFile), true) : [];
+    $currentUser = null;
+    foreach ($users as $u) {
+        if ($u['username'] === $_SESSION['user']) {
+            $currentUser = $u;
+            break;
+        }
+    }
+    if ($currentUser) {
+        if ($currentUser['role'] === 'MainAdmin') {
+            header('Location: main_admin.php');
+            exit;
+        } elseif ($currentUser['role'] === 'Admin') {
+            header('Location: admin.php');
+            exit;
+        } elseif ($currentUser['role'] === 'TeknikPersonel') {
+            header('Location: teknik_personel.php');
+            exit;
+        }
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="tr">
@@ -19,8 +42,28 @@ $page = 'index';
       <span>Akdeniz Üniversitesi</span>
     </a>
     <div>
+      <?php
+      $panel = 'index.php';
+      if (isset($_SESSION['user'])) {
+        $usersFile = 'users.json';
+        $users = file_exists($usersFile) ? json_decode(file_get_contents($usersFile), true) : [];
+        $currentUser = null;
+        foreach ($users as $u) {
+            if ($u['username'] === $_SESSION['user']) {
+                $currentUser = $u;
+                break;
+            }
+        }
+        if ($currentUser) {
+            if ($currentUser['role'] === 'MainAdmin') $panel = 'main_admin.php';
+            elseif ($currentUser['role'] === 'Admin') $panel = 'admin.php';
+            elseif ($currentUser['role'] === 'TeknikPersonel') $panel = 'teknik_personel.php';
+        }
+      }
+      ?>
       <a class="btn btn-outline-light me-2<?= $page=='fault_form'?' active':'' ?>" href="fault_form.php">Arıza Bildir</a>
       <a class="btn btn-outline-light me-2<?= $page=='tracking'?' active':'' ?>" href="tracking.php">Takip</a>
+      <a class="btn btn-outline-light me-2" href="<?= $panel ?>"><i class="bi bi-house"></i> Ana Sayfa</a>
       <a class="btn btn-outline-light ms-2" href="login.php">Yönetici Girişi</a>
     </div>
   </div>

@@ -1,10 +1,42 @@
 <?php
 session_start();
-if (!isset($_SESSION['user']) || !in_array($_SESSION['user'], ['altadmin', 'teknikpersonel'])) {
+require_once 'config.php';
+$usersFile = 'users.json';
+$users = file_exists($usersFile) ? json_decode(file_get_contents($usersFile), true) : [];
+$currentUser = null;
+foreach ($users as $u) {
+    if ($u['username'] === ($_SESSION['user'] ?? '')) {
+        $currentUser = $u;
+        break;
+    }
+}
+if (!$currentUser || $currentUser['role'] !== 'Admin') {
     header('Location: login.php');
     exit;
 }
-require_once 'config.php';
+// --- GÜNCELLEME İŞLEMİ EN BAŞA ALINDI ---
+if (isset($_POST['update_trackingNo'], $_POST['update_status'])) {
+    $trackingNo = $_POST['update_trackingNo'];
+    $newStatus = $_POST['update_status'];
+    $newTech = $_POST['update_technician'] ?? '';
+    $newDesc = $_POST['update_description'] ?? '';
+    if (file_exists(PROBLEM_LOG_FILE)) {
+        $lines = file(PROBLEM_LOG_FILE, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        foreach ($lines as $i => $line) {
+            $entry = json_decode($line, true);
+            if ($entry && isset($entry['trackingNo']) && $entry['trackingNo'] === $trackingNo) {
+                $entry['status'] = $newStatus;
+                $entry['assignedTo'] = $newTech;
+                $entry['description'] = $newDesc;
+                $lines[$i] = json_encode($entry, JSON_UNESCAPED_UNICODE);
+                break;
+            }
+        }
+        file_put_contents(PROBLEM_LOG_FILE, implode("\n", $lines) . "\n");
+        header('Location: admin.php');
+        exit;
+    }
+}
 
 $filter = $_GET['filter'] ?? '';
 $updateMsg = '';
@@ -52,6 +84,8 @@ if ($_SESSION['user'] === 'altadmin' && isset($_POST['assign_tech'], $_POST['ass
             $entry = json_decode($line, true);
             if ($entry && isset($entry['trackingNo']) && $entry['trackingNo'] === $assignTracking) {
                 $entry['assignedTo'] = $assignPersonnel;
+                $entry['assigned'] = $assignPersonnel; // eski kodlarla uyum için
+                $entry['assignedBy'] = $_SESSION['user']; // Altadmin kaydı
                 $lines[$i] = json_encode($entry, JSON_UNESCAPED_UNICODE);
                 // Bildirim: Teknisyene
                 addNotification($assignPersonnel, 'Yeni bir arıza size atandı (Takip No: ' . $assignTracking . ').');
@@ -83,18 +117,11 @@ if ($_SESSION['user'] === 'teknikpersonel' && isset($_POST['confirm_status'], $_
 $problems = [];
 if (file_exists(PROBLEM_LOG_FILE)) {
     $lines = file(PROBLEM_LOG_FILE, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    $count = 0;
     foreach ($lines as $line) {
         $entry = json_decode($line, true);
         if ($entry) {
-            // Sadece kendisine atanmış arızaları göster (hem altadmin hem teknikpersonel için)
-            if (isset($entry['assignedTo']) && $entry['assignedTo'] === $_SESSION['user']) {
-                if ($filter === '' || $entry['status'] === $filter) {
-                    if ($count < 15) {
-                        $problems[] = $entry;
-                        $count++;
-                    }
-                }
+            if ($filter === '' || ($entry['status'] ?? '') === $filter) {
+                $problems[] = $entry;
             }
         }
     }
@@ -113,6 +140,9 @@ if (file_exists($notifFile)) {
         file_put_contents($notifFile, json_encode($notifs, JSON_UNESCAPED_UNICODE));
     }
 }
+
+// Teknisyenler listesini oku
+$teknisyenler = array_filter($users, function($u) { return $u['role'] === 'TeknikPersonel'; });
 ?>
 <!DOCTYPE html>
 <html lang="tr">
@@ -130,15 +160,25 @@ if (file_exists($notifFile)) {
       <span>Akdeniz Üniversitesi</span>
     </a>
     <div>
-      <a class="btn btn-outline-light me-2<?= $page=='admin'?' active':'' ?>" href="admin.php">Admin Paneli</a>
-      <?php if ($_SESSION['user'] === 'teknikpersonel'): ?>
-      <a class="btn btn-outline-light me-2<?= $page=='assigned'?' active':'' ?>" href="?page=assigned">Atanan İşler</a>
-      <?php endif; ?>
       <span class="text-white ms-3">Hoşgeldiniz, <b><?= htmlspecialchars($_SESSION['user']) ?></b></span>
-      <a class="btn btn-outline-light ms-2" href="logout.php">Çıkış</a>
+      <a class="btn btn-outline-light ms-2" href="logout.php"><i class="bi bi-box-arrow-right"></i> Çıkış</a>
     </div>
   </div>
 </nav>
+<div class="container mb-4">
+  <div class="row align-items-center mb-3">
+    <div class="col-md-8">
+      <h2 class="mb-0">Admin Paneli</h2>
+      <div class="text-muted small">Yönetici: <b><?= htmlspecialchars($currentUser['username']) ?></b></div>
+    </div>
+    <div class="col-md-4 text-md-end mt-2 mt-md-0">
+      <ul class="nav nav-tabs justify-content-end" style="border-bottom: 2px solid #e3f0fa;">
+        <li class="nav-item"><a class="nav-link<?= $page=='admin'?' active':'' ?>" href="admin.php"><i class="bi bi-list-task"></i> Arıza Listesi</a></li>
+        <li class="nav-item"><a class="nav-link<?= $page=='assigned'?' active':'' ?>" href="?page=assigned"><i class="bi bi-person-lines-fill"></i> Atanan İşler</a></li>
+      </ul>
+    </div>
+  </div>
+</div>
 <?php if ($notification): ?>
 <div class="container mt-2">
   <div class="alert alert-info alert-dismissible fade show" role="alert">
@@ -174,7 +214,7 @@ if (file_exists($notifFile)) {
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     <?php endif; ?>
-    <?php if (isset($_GET['page']) && $_GET['page'] === 'assigned' && $_SESSION['user'] === 'teknikpersonel'): ?>
+    <?php if (isset($_GET['page']) && $_GET['page'] === 'assigned' && $currentUser['role'] === 'Admin'): ?>
 <h3>Atanan İşler</h3>
 <table class="table table-bordered table-striped align-middle mb-4">
 <thead class="table-primary">
@@ -186,7 +226,7 @@ if (file_exists(PROBLEM_LOG_FILE)) {
     $lines = file(PROBLEM_LOG_FILE, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($lines as $line) {
         $entry = json_decode($line, true);
-        if ($entry && isset($entry['assignedTo']) && $entry['assignedTo'] === $_SESSION['user']) {
+        if ($entry && isset($entry['assignedTo'])) {
             echo '<tr>';
             echo '<td>' . htmlspecialchars($entry['trackingNo']) . '</td>';
             echo '<td>' . htmlspecialchars($entry['description']) . '</td>';
@@ -210,8 +250,11 @@ if (file_exists(PROBLEM_LOG_FILE)) {
             <div class="col-md-4">
                 <label class="form-label">Teknisyen</label>
                 <select name="assign_personnel" class="form-select" required>
-                    <option value="altadmin">altadmin</option>
-                    <option value="teknikpersonel">teknikpersonel</option>
+                    <?php foreach ($teknisyenler as $t): ?>
+                        <option value="<?= htmlspecialchars($t['username']) ?>">
+                            <?= htmlspecialchars($t['username']) ?><?php if (!empty($t['profession'])): ?> (<?= htmlspecialchars($t['profession']) ?>)<?php endif; ?>
+                        </option>
+                    <?php endforeach; ?>
                 </select>
             </div>
             <div class="col-md-2">
@@ -231,8 +274,7 @@ if (file_exists(PROBLEM_LOG_FILE)) {
             <th>İletişim</th>
             <th>Tarih</th>
             <th>Durum</th>
-            <th>Tarayıcı</th>
-            <th>IP</th>
+            <th>Teknisyen</th>
             <th>Güncelle</th>
         </tr>
         </thead>
@@ -247,35 +289,84 @@ if (file_exists(PROBLEM_LOG_FILE)) {
                 <td><?= htmlspecialchars($p['contact'] ?? '-') ?></td>
                 <td><?= htmlspecialchars($p['date']) ?></td>
                 <td><?= htmlspecialchars($p['status']) ?></td>
-                <td><?= htmlspecialchars($p['userAgent'] ?? '-') ?></td>
-                <td><?= htmlspecialchars($p['ip'] ?? '-') ?></td>
+                <td><?= htmlspecialchars($p['assignedTo'] ?? ($p['assigned'] ?? '')) ?></td>
+                <td><?= htmlspecialchars($p['description'] ?? '') ?></td>
                 <td>
-                    <form method="post" class="d-inline">
-                        <input type="hidden" name="trackingNo" value="<?= htmlspecialchars($p['trackingNo']) ?>">
-                        <select name="new_status" class="form-select form-select-sm d-inline w-auto">
-                            <option value="Bekliyor" <?= $p['status']==='Bekliyor'?'selected':'' ?>>Bekliyor</option>
-                            <option value="Onaylandı" <?= $p['status']==='Onaylandı'?'selected':'' ?>>Onaylandı</option>
-                            <option value="Tamamlandı" <?= $p['status']==='Tamamlandı'?'selected':'' ?>>Tamamlandı</option>
-                        </select>
-                        <button type="submit" name="update_status" class="btn btn-primary btn-sm">Güncelle</button>
-                    </form>
+                    <button type="button" class="btn btn-primary btn-sm"
+                        onclick="openUpdatePopup(
+                            '<?= htmlspecialchars($p['trackingNo']) ?>',
+                            '<?= htmlspecialchars($p['status']) ?>',
+                            '<?= htmlspecialchars($p['assignedTo'] ?? ($p['assigned'] ?? '')) ?>',
+                            this.dataset.description
+                        )"
+                        data-description="<?= htmlspecialchars($p['description'] ?? '', ENT_QUOTES) ?>"
+                    >Güncelle</button>
                 </td>
             </tr>
-            <?php if ($_SESSION['user'] === 'teknikpersonel'): ?>
-            <tr>
-                <td colspan="9">
-                    <form method="post" class="d-inline">
-                        <input type="hidden" name="confirm_tracking" value="<?= htmlspecialchars($p['trackingNo']) ?>">
-                        <button type="submit" name="confirm_status" class="btn btn-success btn-sm">Onayla</button>
-                    </form>
-                </td>
-            </tr>
-            <?php endif; ?>
         <?php endforeach; ?>
         </tbody>
     </table>
+
+    <!-- Popup ve Overlay -->
+    <div id="updateOverlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); z-index:9998;" onclick="closeUpdatePopup(event)"></div>
+    <div id="updatePopup" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); min-width:340px; background:#fff; border-radius:16px; box-shadow:0 8px 40px rgba(0,0,0,0.18); z-index:9999; padding:2rem 2rem 1.5rem 2rem;">
+        <form method="post" id="updateForm">
+            <input type="hidden" name="update_trackingNo" id="update_trackingNo">
+            <div class="mb-3">
+                <label class="form-label">Durum</label>
+                <select name="update_status" id="update_status" class="form-select" required>
+                    <option value="Bekliyor">Bekliyor</option>
+                    <option value="Onaylandı">Onaylandı</option>
+                    <option value="Tamamlandı">Tamamlandı</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Teknisyen</label>
+                <select name="update_technician" id="update_technician" class="form-select">
+                    <option value="">(Atanmamış)</option>
+                    <?php foreach ($teknisyenler as $t): ?>
+                        <option value="<?= htmlspecialchars($t['username']) ?>">
+                            <?= htmlspecialchars($t['username']) ?><?php if (!empty($t['profession'])): ?> (<?= htmlspecialchars($t['profession']) ?>)<?php endif; ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Açıklama</label>
+                <textarea name="update_description" id="update_description" class="form-control" rows="2"></textarea>
+            </div>
+            <div class="d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-secondary" onclick="closeUpdatePopup()">İptal</button>
+                <button type="submit" class="btn btn-success">Kaydet</button>
+            </div>
+        </form>
+    </div>
+    <script>
+    function openUpdatePopup(trackingNo, status, technician, description) {
+        document.getElementById('update_trackingNo').value = trackingNo;
+        document.getElementById('update_status').value = status;
+        document.getElementById('update_technician').value = technician;
+        document.getElementById('update_description').value = description || '';
+        document.getElementById('updateOverlay').style.display = 'block';
+        document.getElementById('updatePopup').style.display = 'block';
+    }
+    function closeUpdatePopup(e) {
+        if (!e || e.target === document.getElementById('updateOverlay')) {
+            document.getElementById('updateOverlay').style.display = 'none';
+            document.getElementById('updatePopup').style.display = 'none';
+        }
+    }
+    </script>
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function showAssignForm(trackingNo) {
+    document.getElementById('assignForm-' + trackingNo).classList.remove('d-none');
+}
+function hideAssignForm(trackingNo) {
+    document.getElementById('assignForm-' + trackingNo).classList.add('d-none');
+}
+</script>
 </body>
 </html> 

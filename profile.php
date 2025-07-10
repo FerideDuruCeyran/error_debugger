@@ -46,8 +46,17 @@ if (isset($_POST['change_password'])) {
       <img src="https://upload.wikimedia.org/wikipedia/tr/d/dc/Akdeniz_%C3%9Cniversitesi_logosu.IMG_0838.png" class="akdeniz-logo" alt="Akdeniz Üniversitesi">
       <span>Akdeniz Üniversitesi</span>
     </a>
+    <a class="btn btn-outline-light ms-2" href="logout.php"><i class="bi bi-box-arrow-right"></i> Çıkış</a>
   </div>
 </nav>
+<div class="container mb-4">
+  <div class="row align-items-center mb-3">
+    <div class="col-md-8">
+      <h2 class="mb-0">Profilim</h2>
+      <div class="text-muted small">Kullanıcı: <b><?= htmlspecialchars($currentUser['username']) ?></b></div>
+    </div>
+  </div>
+</div>
 <div class="container mt-4">
     <div class="row justify-content-center">
         <div class="col-md-6">

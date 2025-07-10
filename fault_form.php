@@ -76,6 +76,7 @@ $page = 'fault_form';
     <div>
       <a class="btn btn-outline-light me-2<?= $page=='fault_form'?' active':'' ?>" href="fault_form.php">Arıza Bildir</a>
       <a class="btn btn-outline-light me-2<?= $page=='tracking'?' active':'' ?>" href="tracking.php">Takip</a>
+      <a class="btn btn-outline-light me-2" href="index.php"><i class="bi bi-house"></i> Ana Sayfa</a>
       <a class="btn btn-outline-light ms-2" href="login.php">Yönetici Girişi</a>
     </div>
   </div>

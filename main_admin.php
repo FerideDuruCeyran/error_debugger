@@ -12,12 +12,12 @@ if (!file_exists($usersFile)) {
     file_put_contents($usersFile, json_encode([
         ['id' => 1, 'username' => 'mainadmin', 'role' => 'MainAdmin'],
         ['id' => 2, 'username' => 'altadmin', 'role' => 'Admin'],
-        ['id' => 3, 'username' => 'teknikpersonel', 'role' => 'TeknikPersonel'],
-        ['id' => 4, 'username' => 'teknisyen.ahmet', 'role' => 'TeknikPersonel'],
-        ['id' => 5, 'username' => 'teknisyen.ayse', 'role' => 'TeknikPersonel'],
-        ['id' => 6, 'username' => 'teknisyen.mehmet', 'role' => 'TeknikPersonel'],
-        ['id' => 7, 'username' => 'teknisyen.elif', 'role' => 'TeknikPersonel'],
-        ['id' => 8, 'username' => 'teknisyen.omer', 'role' => 'TeknikPersonel']
+        ['id' => 3, 'username' => 'teknikpersonel', 'role' => 'TeknikPersonel', 'profession' => 'Bilgisayar Teknikeri'],
+        ['id' => 4, 'username' => 'teknisyen.ahmet', 'role' => 'TeknikPersonel', 'profession' => 'Ağ Uzmanı'],
+        ['id' => 5, 'username' => 'teknisyen.ayse', 'role' => 'TeknikPersonel', 'profession' => 'Elektrik Teknisyeni'],
+        ['id' => 6, 'username' => 'teknisyen.mehmet', 'role' => 'TeknikPersonel', 'profession' => 'Yazıcı Bakım Uzmanı'],
+        ['id' => 7, 'username' => 'teknisyen.elif', 'role' => 'TeknikPersonel', 'profession' => 'Laboratuvar Destek Personeli'],
+        ['id' => 8, 'username' => 'teknisyen.omer', 'role' => 'TeknikPersonel', 'profession' => 'Donanım Destek Uzmanı']
     ], JSON_UNESCAPED_UNICODE));
 }
 $users = json_decode(file_get_contents($usersFile), true);
@@ -149,13 +149,22 @@ $teknikPersonel = array_filter($users, function($u){ return $u['role']==='Teknik
       <img src="https://upload.wikimedia.org/wikipedia/tr/d/dc/Akdeniz_%C3%9Cniversitesi_logosu.IMG_0838.png" class="akdeniz-logo" alt="Akdeniz Üniversitesi">
       <span>Akdeniz Üniversitesi</span>
     </a>
+    <a class="btn btn-outline-light ms-2" href="logout.php"><i class="bi bi-box-arrow-right"></i> Çıkış</a>
     <ul class="navbar-nav ms-3">
-      <li class="nav-item"><a class="nav-link<?= $tab=='arizalar'?' active':'' ?>" href="main_admin.php?tab=arizalar">Tüm Arızalar</a></li>
-      <li class="nav-item"><a class="nav-link<?= $tab=='altadmin'?' active':'' ?>" href="main_admin.php?tab=altadmin">Alt Adminler</a></li>
-      <li class="nav-item"><a class="nav-link<?= $tab=='teknik'?' active':'' ?>" href="main_admin.php?tab=teknik">Teknik Personeller</a></li>
+      <li class="nav-item"><a class="nav-link<?= $tab=='arizalar'?' active':'' ?>" href="main_admin.php?tab=arizalar"><i class="bi bi-list-task"></i> Tüm Arızalar</a></li>
+      <li class="nav-item"><a class="nav-link<?= $tab=='altadmin'?' active':'' ?>" href="main_admin.php?tab=altadmin"><i class="bi bi-person-badge"></i> Alt Adminler</a></li>
+      <li class="nav-item"><a class="nav-link<?= $tab=='teknik'?' active':'' ?>" href="main_admin.php?tab=teknik"><i class="bi bi-person-gear"></i> Teknik Personeller</a></li>
     </ul>
   </div>
 </nav>
+<div class="container mb-4">
+  <div class="row align-items-center mb-3">
+    <div class="col-md-8">
+      <h2 class="mb-0">Main Admin Paneli</h2>
+      <div class="text-muted small">Ana Yönetici: <b><?= htmlspecialchars($_SESSION['user']) ?></b></div>
+    </div>
+  </div>
+</div>
 <?php if ($tab=='altadmin'): ?>
 <div class="container mb-4">
   <h4>Alt Adminler</h4>
@@ -425,7 +434,7 @@ document.getElementById('dateEnd').addEventListener('change', filterTable);
                 <select name="assign_personnel" class="form-control" required>
                     <?php foreach ($personnel as $p): ?>
                         <option value="<?= htmlspecialchars($p['username']) ?>">
-                            <?= htmlspecialchars($p['username']) ?>
+                            <?= htmlspecialchars($p['username']) ?><?php if (!empty($p['profession'])): ?> (<?= htmlspecialchars($p['profession']) ?>)<?php endif; ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
