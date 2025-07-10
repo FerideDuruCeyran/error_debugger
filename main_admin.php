@@ -151,19 +151,16 @@ $teknikPersonel = array_filter($users, function($u){ return $u['role']==='Teknik
       <span>Akdeniz Üniversitesi</span>
     </a>
     <a class="btn btn-outline-light ms-2" href="logout.php"><i class="bi bi-box-arrow-right"></i> Çıkış</a>
+    <a class="btn btn-outline-light" href="messages.php"><i class="bi bi-chat-dots"></i> Mesajlar</a>
   </div>
 </nav>
 <div class="container mb-4">
   <div class="row align-items-center mb-3">
-    <div class="col-md-8">
-      <h2 class="mb-0">Main Admin Paneli</h2>
-      <div class="text-muted small">Ana Yönetici: <b><?= htmlspecialchars($_SESSION['user']) ?></b></div>
-    </div>
-    <div class="col-md-4 text-md-end mt-2 mt-md-0">
-      <ul class="nav nav-tabs justify-content-end" style="border-bottom: 2px solid #e3f0fa;">
-        <li class="nav-item"><a class="nav-link<?= $tab=='arizalar'?' active':'' ?>" href="main_admin.php?tab=arizalar"><i class="bi bi-list-task"></i> Tüm Arızalar</a></li>
-        <li class="nav-item"><a class="nav-link<?= $tab=='altadmin'?' active':'' ?>" href="main_admin.php?tab=altadmin"><i class="bi bi-person-badge"></i> Alt Adminler</a></li>
-        <li class="nav-item"><a class="nav-link<?= $tab=='teknik'?' active':'' ?>" href="main_admin.php?tab=teknik"><i class="bi bi-person-gear"></i> Teknik Personeller</a></li>
+    <div class="col-12">
+      <ul class="nav nav-tabs justify-content-center" style="border-bottom: 2px solid #e3f0fa;">
+        <li class="nav-item flex-fill text-center"><a class="nav-link<?= $tab=='arizalar'?' active':'' ?>" href="main_admin.php?tab=arizalar"><i class="bi bi-list-task"></i> Tüm Arızalar</a></li>
+        <li class="nav-item flex-fill text-center"><a class="nav-link<?= $tab=='altadmin'?' active':'' ?>" href="main_admin.php?tab=altadmin"><i class="bi bi-person-badge"></i> Alt Adminler</a></li>
+        <li class="nav-item flex-fill text-center"><a class="nav-link<?= $tab=='teknik'?' active':'' ?>" href="main_admin.php?tab=teknik"><i class="bi bi-person-gear"></i> Teknik Personeller</a></li>
       </ul>
     </div>
   </div>

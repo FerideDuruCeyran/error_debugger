@@ -1,1 +1,80 @@
-[{"id":1,"username":"mainadmin","role":"MainAdmin","password":"MainAdmin123!"},{"id":2,"username":"altadmin","role":"Admin","password":"AltAdmin123!"},{"id":3,"username":"teknikpersonel","role":"TeknikPersonel","profession":"Bilgisayar Teknikeri","password":"Teknik123!"},{"id":4,"username":"teknisyen.ahmet","role":"TeknikPersonel","profession":"Ağ Uzmanı","password":"AgUzmani2024!"},{"id":5,"username":"teknisyen.ayse","role":"TeknikPersonel","profession":"Elektrik Teknisyeni","password":"Elektrik2024!"},{"id":6,"username":"teknisyen.mehmet","role":"TeknikPersonel","profession":"Yazıcı Bakım Uzmanı","password":"Yazici2024!"},{"id":7,"username":"teknisyen.elif","role":"TeknikPersonel","profession":"Laboratuvar Destek Personeli","password":"LabDestek2024!"},{"id":8,"username":"teknisyen.omer","role":"TeknikPersonel","profession":"Donanım Destek Uzmanı","password":"Donanim2024!"}]
+[
+    {
+        "id": 1,
+        "username": "mainadmin",
+        "role": "MainAdmin",
+        "password": "MainAdmin123!",
+        "email": "mainadmin@aku.edu.tr",
+        "last_login": "2025-07-10 10:06:28",
+        "reset_token": ""
+    },
+    {
+        "id": 2,
+        "username": "altadmin",
+        "role": "Admin",
+        "password": "AltAdmin123!",
+        "email": "altadmin@aku.edu.tr",
+        "last_login": "2025-07-10 10:06:19",
+        "reset_token": ""
+    },
+    {
+        "id": 3,
+        "username": "teknikpersonel",
+        "role": "TeknikPersonel",
+        "profession": "Bilgisayar Teknikeri",
+        "password": "Teknik123!",
+        "email": "teknikpersonel@aku.edu.tr",
+        "last_login": "",
+        "reset_token": ""
+    },
+    {
+        "id": 4,
+        "username": "teknisyen.ahmet",
+        "role": "TeknikPersonel",
+        "profession": "Ağ Uzmanı",
+        "password": "AgUzmani2024!",
+        "email": "teknisyen.ahmet@aku.edu.tr",
+        "last_login": "",
+        "reset_token": ""
+    },
+    {
+        "id": 5,
+        "username": "teknisyen.ayse",
+        "role": "TeknikPersonel",
+        "profession": "Elektrik Teknisyeni",
+        "password": "Elektrik2024!",
+        "email": "teknisyen.ayse@aku.edu.tr",
+        "last_login": "2025-07-10 10:08:37",
+        "reset_token": ""
+    },
+    {
+        "id": 6,
+        "username": "teknisyen.mehmet",
+        "role": "TeknikPersonel",
+        "profession": "Yazıcı Bakım Uzmanı",
+        "password": "Yazici2024!",
+        "email": "teknisyen.mehmet@aku.edu.tr",
+        "last_login": "",
+        "reset_token": ""
+    },
+    {
+        "id": 7,
+        "username": "teknisyen.elif",
+        "role": "TeknikPersonel",
+        "profession": "Laboratuvar Destek Personeli",
+        "password": "LabDestek2024!",
+        "email": "teknisyen.elif@aku.edu.tr",
+        "last_login": "",
+        "reset_token": ""
+    },
+    {
+        "id": 8,
+        "username": "teknisyen.omer",
+        "role": "TeknikPersonel",
+        "profession": "Donanım Destek Uzmanı",
+        "password": "Donanim2024!",
+        "email": "teknisyen.omer@aku.edu.tr",
+        "last_login": "",
+        "reset_token": ""
+    }
+]

@@ -47,6 +47,7 @@ if (isset($_POST['change_password'])) {
       <span>Akdeniz Üniversitesi</span>
     </a>
     <a class="btn btn-outline-light ms-2" href="logout.php"><i class="bi bi-box-arrow-right"></i> Çıkış</a>
+    <a class="btn btn-outline-light" href="messages.php"><i class="bi bi-chat-dots"></i> Mesajlar</a>
   </div>
 </nav>
 <div class="container mb-4">
