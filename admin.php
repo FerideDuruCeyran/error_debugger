@@ -37,6 +37,24 @@ if (isset($_POST['update_trackingNo'], $_POST['update_status'])) {
         exit;
     }
 }
+// Arıza silme işlemi (sadece MainAdmin için)
+if (isset($_POST['delete_fault'], $_POST['delete_trackingNo']) && $currentUser && $currentUser['role'] === 'MainAdmin') {
+    $deleteTrackingNo = $_POST['delete_trackingNo'];
+    if (file_exists(PROBLEM_LOG_FILE)) {
+        $lines = file(PROBLEM_LOG_FILE, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        $newLines = [];
+        foreach ($lines as $line) {
+            $entry = json_decode($line, true);
+            if ($entry && isset($entry['trackingNo']) && $entry['trackingNo'] === $deleteTrackingNo) {
+                // Silinecek, ekleme!
+                continue;
+            }
+            $newLines[] = $line;
+        }
+        file_put_contents(PROBLEM_LOG_FILE, implode("\n", $newLines) . "\n");
+        $successMsg = 'Arıza başarıyla silindi.';
+    }
+}
 
 $filter = $_GET['filter'] ?? '';
 $updateMsg = '';
@@ -165,8 +183,6 @@ $teknisyenler = array_filter($users, function($u) { return $u['role'] === 'Tekni
         <span class="badge bg-secondary ms-1"><?= htmlspecialchars($currentUser['role'] ?? '') ?></span>
       </span>
       <button class="btn-icon" id="darkModeToggle" title="Karanlık Mod"><i class="bi bi-moon"></i></button>
-      <button class="btn-icon position-relative" id="notifBtn" title="Bildirimler" data-bs-toggle="modal" data-bs-target="#notifModal"><i class="bi bi-bell"></i><span id="notifDot" class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle d-none"></span></button>
-      <button class="btn-icon" id="helpBtn" title="Yardım" data-bs-toggle="modal" data-bs-target="#helpModal"><i class="bi bi-question-circle"></i></button>
       <a class="btn btn-outline-light" href="index.php"><i class="bi bi-house"></i> Ana Sayfa</a>
       <a class="btn btn-outline-light" href="messages.php"><i class="bi bi-chat-dots"></i> Mesajlar</a>
       <a class="btn btn-outline-light" href="logout.php"><i class="bi bi-box-arrow-right"></i> Çıkış</a>
@@ -249,7 +265,7 @@ if (file_exists(PROBLEM_LOG_FILE)) {
         if ($entry && isset($entry['assignedTo'])) {
             echo '<tr>';
             echo '<td>' . htmlspecialchars($entry['trackingNo']) . '</td>';
-            echo '<td>' . htmlspecialchars($entry['description']) . '</td>';
+            echo '<td>' . htmlspecialchars(isset($entry['description']) ? $entry['description'] : '') . '</td>';
             echo '<td>' . htmlspecialchars($entry['status'] ?? '-') . '</td>';
             echo '<td>' . htmlspecialchars($entry['date'] ?? '-') . '</td>';
             echo '</tr>';
@@ -296,6 +312,9 @@ if (file_exists(PROBLEM_LOG_FILE)) {
             <th>Durum</th>
             <th>Teknisyen</th>
             <th>Güncelle</th>
+            <?php if ($currentUser && $currentUser['role'] === 'MainAdmin'): ?>
+                <th>Sil</th>
+            <?php endif; ?>
         </tr>
         </thead>
         <tbody>
@@ -310,7 +329,7 @@ if (file_exists(PROBLEM_LOG_FILE)) {
                 <td><?= htmlspecialchars($p['date']) ?></td>
                 <td><?= htmlspecialchars($p['status']) ?></td>
                 <td><?= htmlspecialchars($p['assignedTo'] ?? ($p['assigned'] ?? '')) ?></td>
-                <td><?= htmlspecialchars($p['description'] ?? '') ?></td>
+                <td><?= htmlspecialchars(isset($p['description']) ? $p['description'] : '') ?></td>
                 <td>
                     <button type="button" class="btn btn-primary btn-sm"
                         onclick="openUpdatePopup(
@@ -319,9 +338,17 @@ if (file_exists(PROBLEM_LOG_FILE)) {
                             '<?= htmlspecialchars($p['assignedTo'] ?? ($p['assigned'] ?? '')) ?>',
                             this.dataset.description
                         )"
-                        data-description="<?= htmlspecialchars($p['description'] ?? '', ENT_QUOTES) ?>"
+                        data-description="<?= htmlspecialchars(isset($p['description']) ? $p['description'] : '', ENT_QUOTES) ?>"
                     >Güncelle</button>
                 </td>
+                <?php if ($currentUser && $currentUser['role'] === 'MainAdmin'): ?>
+                <td>
+                    <form method="post" onsubmit="return confirm('Bu arızayı silmek istediğinize emin misiniz?');" style="display:inline-block">
+                        <input type="hidden" name="delete_trackingNo" value="<?= htmlspecialchars($p['trackingNo']) ?>">
+                        <button type="submit" name="delete_fault" class="btn btn-danger btn-sm">Sil</button>
+                    </form>
+                </td>
+                <?php endif; ?>
             </tr>
         <?php endforeach; ?>
         </tbody>
@@ -437,26 +464,32 @@ function hideAssignForm(trackingNo) {
 }
 // Karanlık mod toggle
 const darkToggle = document.getElementById('darkModeToggle');
-function setDarkMode(on) {
-  if (on) {
-    document.body.classList.add('dark-mode');
-    darkToggle.innerHTML = '<i class="bi bi-brightness-high"></i>';
-    localStorage.setItem('darkMode', '1');
-  } else {
-    document.body.classList.remove('dark-mode');
-    darkToggle.innerHTML = '<i class="bi bi-moon"></i>';
-    localStorage.setItem('darkMode', '0');
+if (darkToggle) {
+  function setDarkMode(on) {
+    if (on) {
+      document.body.classList.add('dark-mode');
+      darkToggle.innerHTML = '<i class="bi bi-brightness-high"></i>';
+      localStorage.setItem('darkMode', '1');
+    } else {
+      document.body.classList.remove('dark-mode');
+      darkToggle.innerHTML = '<i class="bi bi-moon"></i>';
+      localStorage.setItem('darkMode', '0');
+    }
   }
+  darkToggle.onclick = () => setDarkMode(!document.body.classList.contains('dark-mode'));
+  if (localStorage.getItem('darkMode') === '1') setDarkMode(true);
 }
-darkToggle.onclick = () => setDarkMode(!document.body.classList.contains('dark-mode'));
-if (localStorage.getItem('darkMode') === '1') setDarkMode(true);
 // Bildirim ve yardım butonları (modal açma placeholder)
-document.getElementById('helpBtn').onclick = function() {
-  alert('Yardım ve SSS yakında burada!');
-};
-document.getElementById('notifBtn').onclick = function() {
-  alert('Bildirim merkezi yakında burada!');
-};
+if (document.getElementById('helpBtn')) {
+  document.getElementById('helpBtn').onclick = function() {
+    alert('Yardım ve SSS yakında burada!');
+  };
+}
+if (document.getElementById('notifBtn')) {
+  document.getElementById('notifBtn').onclick = function() {
+    alert('Bildirim merkezi yakında burada!');
+  };
+}
 // Bildirimleri temizle (örnek)
 function clearNotifs() {
   document.querySelector('#notifModal .list-group').innerHTML = '<li class="list-group-item text-muted">Tüm bildirimler temizlendi.</li>';
