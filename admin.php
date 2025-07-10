@@ -161,6 +161,54 @@ if (file_exists($notifFile)) {
 
 // Teknisyenler listesini oku
 $teknisyenler = array_filter($users, function($u) { return $u['role'] === 'TeknikPersonel'; });
+
+// Ortak arıza durumları
+$faultStatuses = [
+    'Bekliyor' => 'Bekliyor',
+    'Onaylandı' => 'Onaylandı',
+    'Tamamlandı' => 'Tamamlandı'
+];
+
+// İstatistikler için değişkenler
+$totalFaults = 0;
+$statusCounts = ['Bekliyor'=>0, 'Onaylandı'=>0, 'Tamamlandı'=>0];
+$lastMonthCount = 0;
+$departmentCounts = [];
+$typeCounts = [];
+$mostReportedDepartment = '-';
+$mostReportedType = '-';
+$mostReportedDepartmentCount = 0;
+$mostReportedTypeCount = 0;
+$now = time();
+if (file_exists(PROBLEM_LOG_FILE)) {
+    $lines = file(PROBLEM_LOG_FILE, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        $entry = json_decode($line, true);
+        if ($entry) {
+            $totalFaults++;
+            $status = $entry['status'] ?? '-';
+            if (isset($statusCounts[$status])) $statusCounts[$status]++;
+            $date = isset($entry['date']) ? strtotime($entry['date']) : false;
+            if ($date && ($now - $date) <= 31*24*60*60) $lastMonthCount++;
+            $dep = $entry['department'] ?? '-';
+            $departmentCounts[$dep] = ($departmentCounts[$dep] ?? 0) + 1;
+            $type = $entry['faultType'] ?? '-';
+            $typeCounts[$type] = ($typeCounts[$type] ?? 0) + 1;
+        }
+    }
+    // En çok arıza bildiren birim
+    if ($departmentCounts) {
+        arsort($departmentCounts);
+        $mostReportedDepartment = array_key_first($departmentCounts);
+        $mostReportedDepartmentCount = $departmentCounts[$mostReportedDepartment];
+    }
+    // En çok görülen arıza türü
+    if ($typeCounts) {
+        arsort($typeCounts);
+        $mostReportedType = array_key_first($typeCounts);
+        $mostReportedTypeCount = $typeCounts[$mostReportedType];
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="tr">
@@ -169,6 +217,121 @@ $teknisyenler = array_filter($users, function($u) { return $u['role'] === 'Tekni
     <title>Admin Paneli - Akdeniz Üniversitesi</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Cardbox için CSS ekle -->
+    <style>
+    .detail-cardbox {
+      position: absolute;
+      z-index: 9999;
+      min-width: 320px;
+      max-width: 400px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+      padding: 1rem 1.2rem;
+      border: 1px solid #e3e3e3;
+      top: 40px;
+      left: 0;
+      display: none;
+    }
+    .detail-cardbox .close-btn {
+      position: absolute;
+      top: 8px;
+      right: 12px;
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      color: #888;
+      cursor: pointer;
+    }
+    .table.detail-table { position: relative; }
+    /* Tablo güzelleştirme */
+    .table-striped > tbody > tr:nth-of-type(odd) {
+      background-color: #f8f9fa;
+    }
+    .table-hover tbody tr:hover {
+      background-color: #e3f0fa;
+      transition: background 0.2s;
+    }
+    .badge {
+      font-size: 1em;
+      padding: 0.5em 0.8em;
+      border-radius: 0.7em;
+    }
+    .btn-primary, .btn-outline-info, .btn-danger, .btn-success {
+      transition: box-shadow 0.2s, background 0.2s;
+    }
+    .btn-primary:hover, .btn-outline-info:hover, .btn-danger:hover, .btn-success:hover {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+      filter: brightness(1.08);
+    }
+    .form-select, .form-control {
+      border-radius: 0.7em;
+      border: 1.5px solid #b6d4fe;
+    }
+    .form-select:focus, .form-control:focus {
+      border-color: #0d6efd;
+      box-shadow: 0 0 0 0.15rem rgba(13,110,253,.15);
+    }
+    /* Karanlık mod uyumu */
+    body.dark-mode .table-striped > tbody > tr:nth-of-type(odd) {
+      background-color: #23272b;
+    }
+    body.dark-mode .table-hover tbody tr:hover {
+      background-color: #1a1d20;
+    }
+    body.dark-mode .form-select, body.dark-mode .form-control {
+      background: #23272b;
+      color: #fff;
+      border-color: #495057;
+    }
+    body.dark-mode .form-select:focus, body.dark-mode .form-control:focus {
+      border-color: #0d6efd;
+      box-shadow: 0 0 0 0.15rem rgba(13,110,253,.25);
+    }
+    /* Navbar'da dark mode butonunu daha görünür ve yuvarlak yap */
+    .navbar .btn-icon#darkModeToggle {
+      background: #fff2;
+      border: none;
+      color: #fff;
+      font-size: 1.4em;
+      margin-left: 8px;
+      margin-right: 2px;
+      transition: color 0.2s, background 0.2s;
+      border-radius: 50%;
+      padding: 6px 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      position: relative;
+    }
+    .navbar .btn-icon#darkModeToggle:hover, .navbar .btn-icon#darkModeToggle:focus {
+      background: #fff4;
+      color: #ffd700;
+    }
+    @media (max-width: 600px) {
+      #floatingDarkToggle {
+        display: block !important;
+      }
+    }
+    #floatingDarkToggle {
+      display: none;
+      position: fixed;
+      bottom: 18px;
+      right: 18px;
+      z-index: 9999;
+      background: #232a3a;
+      color: #ffd700;
+      border-radius: 50%;
+      width: 48px;
+      height: 48px;
+      font-size: 2em;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+      border: 2px solid #ffd700;
+      cursor: pointer;
+    }
+    #floatingDarkToggle:hover { background: #0d6efd; color: #fff; border-color: #fff; }
+    </style>
 </head>
 <body class="bg-light">
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
@@ -182,7 +345,9 @@ $teknisyenler = array_filter($users, function($u) { return $u['role'] === 'Tekni
         <i class="bi bi-person-circle"></i> <?= htmlspecialchars($currentUser['username'] ?? 'Misafir') ?>
         <span class="badge bg-secondary ms-1"><?= htmlspecialchars($currentUser['role'] ?? '') ?></span>
       </span>
-      <button class="btn-icon" id="darkModeToggle" title="Karanlık Mod"><i class="bi bi-moon"></i></button>
+      <button class="btn-icon" id="darkModeToggle" title="Karanlık Modu Aç/Kapat" aria-label="Karanlık Mod"><i class="bi bi-moon"></i></button>
+      <a class="btn-icon" id="notifBtn" title="Bildirimler" data-bs-toggle="modal" data-bs-target="#notifModal"><i class="bi bi-bell"></i></a>
+      <a class="btn-icon" id="helpBtn" title="Yardım" data-bs-toggle="modal" data-bs-target="#helpModal"><i class="bi bi-question-circle"></i></a>
       <a class="btn btn-outline-light" href="index.php"><i class="bi bi-house"></i> Ana Sayfa</a>
       <a class="btn btn-outline-light" href="messages.php"><i class="bi bi-chat-dots"></i> Mesajlar</a>
       <a class="btn btn-outline-light" href="logout.php"><i class="bi bi-box-arrow-right"></i> Çıkış</a>
@@ -202,6 +367,7 @@ $teknisyenler = array_filter($users, function($u) { return $u['role'] === 'Tekni
       </ul>
     </div>
   </div>
+  <!-- Modern Dashboard Kartları kaldırıldı, sadece klasik başlık ve filtre kalacak -->
 </div>
 <?php if ($notification): ?>
 <div class="container mt-2">
@@ -217,10 +383,10 @@ $teknisyenler = array_filter($users, function($u) { return $u['role'] === 'Tekni
         <label class="form-label">Duruma Göre Filtrele:
             <select name="filter" class="form-select d-inline w-auto" onchange="this.form.submit()">
                 <option value="" <?= $filter === '' ? 'selected' : '' ?>>Tümü</option>
-                <option value="Bekliyor" <?= $filter === 'Bekliyor' ? 'selected' : '' ?>>Bekliyor</option>
-                <option value="Onaylandı" <?= $filter === 'Onaylandı' ? 'selected' : '' ?>>Onaylandı</option>
-                <option value="Tamamlandı" <?= $filter === 'Tamamlandı' ? 'selected' : '' ?>>Tamamlandı</option>
-            </select>
+<?php foreach ($faultStatuses as $key => $label): ?>
+    <option value="<?= $key ?>" <?= $filter === $key ? 'selected' : '' ?>><?= $label ?></option>
+<?php endforeach; ?>
+                </select>
         </label>
     </form>
     <?php if ($updateMsg): ?>
@@ -299,7 +465,7 @@ if (file_exists(PROBLEM_LOG_FILE)) {
         </div>
     </form>
     <div class="table-responsive">
-    <table class="table table-bordered table-striped align-middle">
+    <table class="table table-bordered table-striped align-middle detail-table">
         <thead class="table-primary">
         <tr>
             <th>Takip No</th>
@@ -349,6 +515,11 @@ if (file_exists(PROBLEM_LOG_FILE)) {
                     </form>
                 </td>
                 <?php endif; ?>
+                <td>
+                    <button type="button" class="btn btn-outline-info btn-sm detail-btn" onclick="openDetailCardbox('<?= htmlspecialchars($p['trackingNo']) ?>', this)">
+                        <i class="bi bi-search"></i> Detaylı İncele
+                    </button>
+                </td>
             </tr>
         <?php endforeach; ?>
         </tbody>
@@ -362,9 +533,9 @@ if (file_exists(PROBLEM_LOG_FILE)) {
             <div class="mb-3">
                 <label class="form-label">Durum</label>
                 <select name="update_status" id="update_status" class="form-select" required>
-                    <option value="Bekliyor">Bekliyor</option>
-                    <option value="Onaylandı">Onaylandı</option>
-                    <option value="Tamamlandı">Tamamlandı</option>
+<?php foreach ($faultStatuses as $key => $label): ?>
+    <option value="<?= $key ?>"><?= $label ?></option>
+<?php endforeach; ?>
                 </select>
             </div>
             <div class="mb-3">
@@ -406,6 +577,7 @@ if (file_exists(PROBLEM_LOG_FILE)) {
     </script>
     </div>
 </div>
+<!-- Detay Modalı ve eski openDetailModal fonksiyonunu tamamen kaldır -->
 <!-- Bildirim Merkezi Modal -->
 <div class="modal fade" id="notifModal" tabindex="-1" aria-labelledby="notifModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-end">
@@ -462,48 +634,86 @@ function showAssignForm(trackingNo) {
 function hideAssignForm(trackingNo) {
     document.getElementById('assignForm-' + trackingNo).classList.add('d-none');
 }
-// Karanlık mod toggle
-const darkToggle = document.getElementById('darkModeToggle');
-if (darkToggle) {
-  function setDarkMode(on) {
-    if (on) {
-      document.body.classList.add('dark-mode');
-      darkToggle.innerHTML = '<i class="bi bi-brightness-high"></i>';
-      localStorage.setItem('darkMode', '1');
+// Arıza detay modalı için arıza verisini JS'ye aktar
+const problemsData = <?php echo json_encode($problems, JSON_UNESCAPED_UNICODE); ?>;
+let openCardbox = null;
+function openDetailCardbox(trackingNo, btn) {
+    if (openCardbox) openCardbox.remove();
+    const p = problemsData.find(x => x.trackingNo === trackingNo);
+    if (!p) return;
+    let html = `<button class='close-btn' onclick='this.parentElement.remove(); openCardbox=null;'>&times;</button>`;
+    html += `<div class='mb-2'><b>Takip No:</b> ${p.trackingNo}</div>`;
+    html += `<div class='mb-2'><b>Detaylı Tanım:</b><br><span>${p.detailedDescription ?? '-'}</span></div>`;
+    if (p.filePath && p.filePath !== '') {
+        const fileName = p.filePath.split('/').pop();
+        const ext = fileName.split('.').pop().toLowerCase();
+        if (["jpg","jpeg","png","gif","bmp","webp"].includes(ext)) {
+            html += `<div class='mb-2'><img src='uploads/${fileName}' alt='Ekli Görsel' style='max-width:100%;max-height:180px;border-radius:8px;'></div>`;
+        } else {
+            html += `<div class='mb-2'><a href='uploads/${fileName}' target='_blank' class='btn btn-outline-primary btn-sm'><i class='bi bi-file-earmark-arrow-down'></i> Dosyayı Görüntüle/İndir</a></div>`;
+        }
     } else {
-      document.body.classList.remove('dark-mode');
-      darkToggle.innerHTML = '<i class="bi bi-moon"></i>';
-      localStorage.setItem('darkMode', '0');
+        html += `<div class='mb-2 text-muted'>Dosya eklenmemiş.</div>`;
     }
+    html += `<div class='mb-2'><b>Birim:</b> ${p.department ?? '-'}</div>`;
+    html += `<div class='mb-2'><b>Arıza Türü:</b> ${p.faultType ?? '-'}</div>`;
+    html += `<div class='mb-2'><b>Durum:</b> ${p.status ?? '-'}</div>`;
+    html += `<div class='mb-2'><b>Tarih:</b> ${p.date ?? '-'}</div>`;
+    const card = document.createElement('div');
+    card.className = 'detail-cardbox';
+    card.innerHTML = html;
+    document.body.appendChild(card);
+    const rect = btn.getBoundingClientRect();
+    card.style.top = (window.scrollY + rect.bottom + 4) + 'px';
+    card.style.left = (window.scrollX + rect.left) + 'px';
+    card.style.display = 'block';
+    openCardbox = card;
+}
+document.addEventListener('click', function(e) {
+    if (openCardbox && !openCardbox.contains(e.target) && !e.target.classList.contains('detail-btn')) {
+        openCardbox.remove();
+        openCardbox = null;
+    }
+});
+</script>
+<div id="floatingDarkToggle" title="Karanlık Mod" aria-label="Karanlık Mod" style="display:none;"><i class="bi bi-moon"></i></div>
+<script>
+function setDarkMode(on) {
+  if (on) {
+    document.body.classList.add('dark-mode');
+    document.getElementById('darkModeToggle').innerHTML = '<i class="bi bi-brightness-high"></i>';
+    document.getElementById('floatingDarkToggle').innerHTML = '<i class="bi bi-brightness-high"></i>';
+    localStorage.setItem('darkMode', '1');
+  } else {
+    document.body.classList.remove('dark-mode');
+    document.getElementById('darkModeToggle').innerHTML = '<i class="bi bi-moon"></i>';
+    document.getElementById('floatingDarkToggle').innerHTML = '<i class="bi bi-moon"></i>';
+    localStorage.setItem('darkMode', '0');
   }
-  darkToggle.onclick = () => setDarkMode(!document.body.classList.contains('dark-mode'));
+}
+document.addEventListener('DOMContentLoaded', function() {
+  // Navbar butonu
+  var darkToggle = document.getElementById('darkModeToggle');
+  if (darkToggle) {
+    darkToggle.onclick = function() {
+      setDarkMode(!document.body.classList.contains('dark-mode'));
+    };
+  }
+  // Mobil/floating buton
+  var floatToggle = document.getElementById('floatingDarkToggle');
+  if (floatToggle) {
+    floatToggle.onclick = function() {
+      setDarkMode(!document.body.classList.contains('dark-mode'));
+    };
+  }
+  // Başlangıçta localStorage'a göre ayarla
   if (localStorage.getItem('darkMode') === '1') setDarkMode(true);
-}
-// Bildirim ve yardım butonları (modal açma placeholder)
-if (document.getElementById('helpBtn')) {
-  document.getElementById('helpBtn').onclick = function() {
-    alert('Yardım ve SSS yakında burada!');
-  };
-}
-if (document.getElementById('notifBtn')) {
-  document.getElementById('notifBtn').onclick = function() {
-    alert('Bildirim merkezi yakında burada!');
-  };
-}
-// Bildirimleri temizle (örnek)
-function clearNotifs() {
-  document.querySelector('#notifModal .list-group').innerHTML = '<li class="list-group-item text-muted">Tüm bildirimler temizlendi.</li>';
-  document.getElementById('notifDot').classList.add('d-none');
-}
-// Geri bildirim formu
-const feedbackForm = document.getElementById('feedbackForm');
-if (feedbackForm) {
-  feedbackForm.onsubmit = function(e) {
-    e.preventDefault();
-    document.getElementById('feedbackMsg').innerHTML = '<span class="text-success">Teşekkürler, geri bildiriminiz alındı.</span>';
-    feedbackForm.reset();
-  };
-}
+  else setDarkMode(false);
+  // Mobilde floating butonu göster
+  if (window.innerWidth < 600) {
+    floatToggle.style.display = 'flex';
+  }
+});
 </script>
 </body>
 </html> 

@@ -6,6 +6,18 @@ require_once 'config.php';
 $result = null;
 $error = '';
 
+// Ortak arıza durumları
+$faultStatuses = [
+    'Bekliyor' => 'Bekliyor',
+    'Onaylandı' => 'Onaylandı',
+    'Tamamlandı' => 'Tamamlandı'
+];
+$faultStatusBadges = [
+    'Bekliyor' => 'warning',
+    'Onaylandı' => 'info',
+    'Tamamlandı' => 'success'
+];
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $trackingNo = trim($_POST['trackingNo'] ?? '');
     if ($trackingNo === '') {
@@ -72,19 +84,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <?php if ($result): ?>
                         <h3>Arıza Bilgileri</h3>
                         <ul class="list-group mb-3">
-                            <li class="list-group-item"><b>Arıza Türü:</b> <span class="badge bg-info text-dark"><?= htmlspecialchars($result['faultType']) ?></span></li>
+                            <li class="list-group-item"><b>Arıza Durumu:</b> <span class="badge bg-<?= $faultStatusBadges[$result['status']] ?? 'secondary' ?> text-dark"><?= $faultStatuses[$result['status']] ?? $result['status'] ?></span></li>
                             <li class="list-group-item"><b>Başlık:</b> <?= htmlspecialchars($result['title'] ?? '') ?></li>
                             <li class="list-group-item"><b>İçerik:</b> <?= htmlspecialchars($result['content'] ?? '') ?></li>
                             <li class="list-group-item"><b>Bilgisayar Özellikleri:</b> <?= htmlspecialchars($result['specs'] ?? '-') ?></li>
                             <li class="list-group-item"><b>Birim:</b> <?= htmlspecialchars($result['department']) ?></li>
                             <li class="list-group-item"><b>Tarih:</b> <?= htmlspecialchars($result['date']) ?></li>
-                            <li class="list-group-item"><b>Durum:</b> <span class="badge bg-<?php
-                                $s = $result['status'];
-                                if ($s==='Bekliyor') echo 'warning';
-                                elseif ($s==='Onaylandı') echo 'info';
-                                elseif ($s==='Tamamlandı') echo 'success';
-                                else echo 'secondary';
-                            ?> text-dark"><?= htmlspecialchars($result['status']) ?></span></li>
                             <li class="list-group-item"><b>İletişim:</b> <i class="bi bi-telephone"></i> <?= htmlspecialchars($result['contact']) ?></li>
                             <?php if (!empty($result['assignedTo'])): ?>
                                 <li class="list-group-item"><b>Atanan Kişi:</b> <i class="bi bi-person"></i> <?= htmlspecialchars($result['assignedTo']) ?></li>

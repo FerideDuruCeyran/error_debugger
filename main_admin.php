@@ -158,6 +158,13 @@ $personnel = array_values(array_filter($users, function($u) {
 $tab = $_GET['tab'] ?? 'arizalar';
 $altAdmins = array_filter($users, function($u){ return $u['role']==='Admin'; });
 $teknikPersonel = array_filter($users, function($u){ return $u['role']==='TeknikPersonel'; });
+
+// Ortak arıza durumları
+$faultStatuses = [
+    'Bekliyor' => 'Bekliyor',
+    'Onaylandı' => 'Onaylandı',
+    'Tamamlandı' => 'Tamamlandı'
+];
 ?>
 <!DOCTYPE html>
 <html lang="tr">
@@ -167,6 +174,33 @@ $teknikPersonel = array_filter($users, function($u){ return $u['role']==='Teknik
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+.detail-cardbox {
+  position: absolute;
+  z-index: 9999;
+  min-width: 320px;
+  max-width: 400px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  padding: 1rem 1.2rem;
+  border: 1px solid #e3e3e3;
+  top: 40px;
+  left: 0;
+  display: none;
+}
+.detail-cardbox .close-btn {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: #888;
+  cursor: pointer;
+}
+.table.detail-table { position: relative; }
+</style>
 </head>
 <body class="bg-light">
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
@@ -243,18 +277,17 @@ $teknikPersonel = array_filter($users, function($u){ return $u['role']==='Teknik
         <div class="col-md-3">
             <label class="form-label">Durum</label>
             <select name="status" class="form-select">
-                <option value="" <?= $status === '' ? 'selected' : '' ?>>Tümü</option>
-                <option value="Bekliyor" <?= $status === 'Bekliyor' ? 'selected' : '' ?>>Bekliyor</option>
-                <option value="Onaylandı" <?= $status === 'Onaylandı' ? 'selected' : '' ?>>Onaylandı</option>
-                <option value="Tamamlandı" <?= $status === 'Tamamlandı' ? 'selected' : '' ?>>Tamamlandı</option>
-            </select>
+<?php foreach ($faultStatuses as $key => $label): ?>
+    <option value="<?= $key ?>" <?= $status === $key ? 'selected' : '' ?>><?= $label ?></option>
+<?php endforeach; ?>
+                </select>
         </div>
         <div class="col-md-2 align-self-end">
             <button type="submit" class="btn btn-primary w-100">Filtrele</button>
         </div>
     </form>
     <h2>Tüm Arızalar ve Durumları</h2>
-    <table id="reportTable" class="table table-bordered table-striped align-middle mb-4">
+    <table id="reportTable" class="table table-bordered table-striped align-middle detail-table">
     <thead class="table-primary">
     <tr>
         <th>Takip No</th>
@@ -272,6 +305,7 @@ $teknikPersonel = array_filter($users, function($u){ return $u['role']==='Teknik
         <?php if ($currentUser && $currentUser['role'] === 'MainAdmin'): ?>
             <th>Sil</th>
         <?php endif; ?>
+        <th>Detaylı İncele</th>
     </tr>
     </thead>
     <tbody>
@@ -302,6 +336,11 @@ $teknikPersonel = array_filter($users, function($u){ return $u['role']==='Teknik
                     echo '</form>';
                     echo '</td>';
                 }
+                echo '<td>';
+                echo '<button type="button" class="btn btn-outline-info btn-sm detail-btn" onclick="openDetailCardbox(\'' . htmlspecialchars($entry['trackingNo']) . '\', this)">';
+                echo '<i class="bi bi-search"></i> Detaylı İncele';
+                echo '</button>';
+                echo '</td>';
                 echo '</tr>';
             }
         }
@@ -310,9 +349,108 @@ $teknikPersonel = array_filter($users, function($u){ return $u['role']==='Teknik
     </tbody>
     </table>
     <h2>Arıza İstatistikleri</h2>
+    <?php
+    // İstatistikler için değişkenler
+    $totalFaults = 0;
+    $statusCounts = ['Bekliyor'=>0, 'Onaylandı'=>0, 'Tamamlandı'=>0];
+    $lastMonthCount = 0;
+    $departmentCounts = [];
+    $typeCounts = [];
+    $mostReportedDepartment = '-';
+    $mostReportedType = '-';
+    $mostReportedDepartmentCount = 0;
+    $mostReportedTypeCount = 0;
+    $now = time();
+    if (file_exists(PROBLEM_LOG_FILE)) {
+        $lines = file(PROBLEM_LOG_FILE, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        foreach ($lines as $line) {
+            $entry = json_decode($line, true);
+            if ($entry) {
+                $totalFaults++;
+                $status = $entry['status'] ?? '-';
+                if (isset($statusCounts[$status])) $statusCounts[$status]++;
+                $date = isset($entry['date']) ? strtotime($entry['date']) : false;
+                if ($date && ($now - $date) <= 31*24*60*60) $lastMonthCount++;
+                $dep = $entry['department'] ?? '-';
+                $departmentCounts[$dep] = ($departmentCounts[$dep] ?? 0) + 1;
+                $type = $entry['faultType'] ?? '-';
+                $typeCounts[$type] = ($typeCounts[$type] ?? 0) + 1;
+            }
+        }
+        // En çok arıza bildiren birim
+        if ($departmentCounts) {
+            arsort($departmentCounts);
+            $mostReportedDepartment = array_key_first($departmentCounts);
+            $mostReportedDepartmentCount = $departmentCounts[$mostReportedDepartment];
+        }
+        // En çok görülen arıza türü
+        if ($typeCounts) {
+            arsort($typeCounts);
+            $mostReportedType = array_key_first($typeCounts);
+            $mostReportedTypeCount = $typeCounts[$mostReportedType];
+        }
+    }
+    ?>
     <div class="row mb-4 justify-content-center">
-      <div class="col-md-6 mb-3">
-        <canvas id="chartType"></canvas>
+      <div class="col-md-2 mb-3">
+        <div class="card text-bg-primary h-100">
+          <div class="card-body text-center">
+            <div class="fs-2 fw-bold"><?= $totalFaults ?></div>
+            <div class="fw-semibold">Toplam Arıza</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2 mb-3">
+        <div class="card text-bg-warning h-100">
+          <div class="card-body text-center">
+            <div class="fs-2 fw-bold"><?= $statusCounts['Bekliyor'] ?></div>
+            <div class="fw-semibold">Bekliyor</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2 mb-3">
+        <div class="card text-bg-info h-100">
+          <div class="card-body text-center">
+            <div class="fs-2 fw-bold"><?= $statusCounts['Onaylandı'] ?></div>
+            <div class="fw-semibold">Onaylandı</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2 mb-3">
+        <div class="card text-bg-success h-100">
+          <div class="card-body text-center">
+            <div class="fs-2 fw-bold"><?= $statusCounts['Tamamlandı'] ?></div>
+            <div class="fw-semibold">Tamamlandı</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2 mb-3">
+        <div class="card text-bg-secondary h-100">
+          <div class="card-body text-center">
+            <div class="fs-2 fw-bold"><?= $lastMonthCount ?></div>
+            <div class="fw-semibold">Son 1 Ayda Açılan</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row mb-4 justify-content-center">
+      <div class="col-md-4 mb-3">
+        <div class="card h-100">
+          <div class="card-body text-center">
+            <div class="fw-semibold">En Çok Arıza Bildiren Birim</div>
+            <div class="fs-4 fw-bold"><?= htmlspecialchars($mostReportedDepartment) ?></div>
+            <div class="text-muted">(<?= $mostReportedDepartmentCount ?> arıza)</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4 mb-3">
+        <div class="card h-100">
+          <div class="card-body text-center">
+            <div class="fw-semibold">En Çok Görülen Arıza Türü</div>
+            <div class="fs-4 fw-bold"><?= htmlspecialchars($mostReportedType) ?></div>
+            <div class="text-muted">(<?= $mostReportedTypeCount ?> arıza)</div>
+          </div>
+        </div>
       </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -463,6 +601,47 @@ function setDarkMode(on) {
 }
 darkToggle.onclick = () => setDarkMode(!document.body.classList.contains('dark-mode'));
 if (localStorage.getItem('darkMode') === '1') setDarkMode(true);
+
+const problemsData = <?php echo json_encode($reports, JSON_UNESCAPED_UNICODE); ?>;
+let openCardbox = null;
+function openDetailCardbox(trackingNo, btn) {
+    if (openCardbox) openCardbox.remove();
+    const p = problemsData.find(x => x.trackingNo === trackingNo);
+    if (!p) return;
+    let html = `<button class='close-btn' onclick='this.parentElement.remove(); openCardbox=null;'>&times;</button>`;
+    html += `<div class='mb-2'><b>Takip No:</b> ${p.trackingNo}</div>`;
+    html += `<div class='mb-2'><b>Detaylı Tanım:</b><br><span>${p.detailedDescription ?? '-'}</span></div>`;
+    if (p.filePath && p.filePath !== '') {
+        const fileName = p.filePath.split('/').pop();
+        const ext = fileName.split('.').pop().toLowerCase();
+        if (["jpg","jpeg","png","gif","bmp","webp"].includes(ext)) {
+            html += `<div class='mb-2'><img src='uploads/${fileName}' alt='Ekli Görsel' style='max-width:100%;max-height:180px;border-radius:8px;'></div>`;
+        } else {
+            html += `<div class='mb-2'><a href='uploads/${fileName}' target='_blank' class='btn btn-outline-primary btn-sm'><i class='bi bi-file-earmark-arrow-down'></i> Dosyayı Görüntüle/İndir</a></div>`;
+        }
+    } else {
+        html += `<div class='mb-2 text-muted'>Dosya eklenmemiş.</div>`;
+    }
+    html += `<div class='mb-2'><b>Birim:</b> ${p.department ?? '-'}</div>`;
+    html += `<div class='mb-2'><b>Arıza Türü:</b> ${p.faultType ?? '-'}</div>`;
+    html += `<div class='mb-2'><b>Durum:</b> ${p.status ?? '-'}</div>`;
+    html += `<div class='mb-2'><b>Tarih:</b> ${p.date ?? '-'}</div>`;
+    const card = document.createElement('div');
+    card.className = 'detail-cardbox';
+    card.innerHTML = html;
+    document.body.appendChild(card);
+    const rect = btn.getBoundingClientRect();
+    card.style.top = (window.scrollY + rect.bottom + 4) + 'px';
+    card.style.left = (window.scrollX + rect.left) + 'px';
+    card.style.display = 'block';
+    openCardbox = card;
+}
+document.addEventListener('click', function(e) {
+    if (openCardbox && !openCardbox.contains(e.target) && !e.target.classList.contains('detail-btn')) {
+        openCardbox.remove();
+        openCardbox = null;
+    }
+});
 </script>
 </body>
 </html> 

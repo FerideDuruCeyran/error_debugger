@@ -15,6 +15,12 @@ if (!$currentUser || $currentUser['role'] !== 'TeknikPersonel') {
     exit;
 }
 $tab = $_GET['tab'] ?? 'assigned';
+// Ortak arıza durumları
+$faultStatuses = [
+    'Bekliyor' => 'Bekliyor',
+    'Onaylandı' => 'Onaylandı',
+    'Tamamlandı' => 'Tamamlandı'
+];
 // --- GÜNCELLEME İŞLEMİ ---
 $successMsg = $errorMsg = '';
 if (isset($_POST['update_trackingNo'], $_POST['update_status'])) {
@@ -52,6 +58,19 @@ if (isset($_POST['update_trackingNo'], $_POST['update_status'])) {
         $errorMsg = 'Kayıt dosyası bulunamadı.';
     }
 }
+// --- Atanan arızaları $problems dizisine aktar ---
+$problems = [];
+$logFile = PROBLEM_LOG_FILE;
+if (file_exists($logFile)) {
+    $lines = file($logFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        $entry = json_decode($line, true);
+        $assignedUser = $entry['assignedTo'] ?? ($entry['assigned'] ?? null);
+        if ($entry && $assignedUser && mb_strtolower(trim($assignedUser)) === mb_strtolower(trim($currentUser['username']))) {
+            $problems[] = $entry;
+        }
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="tr">
@@ -60,6 +79,33 @@ if (isset($_POST['update_trackingNo'], $_POST['update_status'])) {
     <title>Teknik Personel Paneli</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <style>
+.detail-cardbox {
+  position: absolute;
+  z-index: 9999;
+  min-width: 320px;
+  max-width: 400px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  padding: 1rem 1.2rem;
+  border: 1px solid #e3e3e3;
+  top: 40px;
+  left: 0;
+  display: none;
+}
+.detail-cardbox .close-btn {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: #888;
+  cursor: pointer;
+}
+.table.detail-table { position: relative; }
+</style>
 </head>
 <body class="bg-light">
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
@@ -132,47 +178,27 @@ if (isset($_POST['update_trackingNo'], $_POST['update_status'])) {
           <input type="text" id="tableSearch" class="form-control" placeholder="Tabloda ara...">
         </div>
         <div class="table-responsive">
-        <table class="table table-bordered table-striped align-middle mb-0" id="assignedTable">
+        <table class="table table-bordered table-striped align-middle detail-table" id="assignedTable">
             <thead class="table-primary">
             <tr><th>Takip No</th><th>Açıklama</th><th>Durum</th><th>Tarih</th><th>İletişim</th><th>Güncelle</th></tr>
             </thead>
             <tbody>
-            <?php
-            $logFile = PROBLEM_LOG_FILE;
-            if (file_exists($logFile)) {
-                $lines = file($logFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-                foreach ($lines as $line) {
-                    $entry = json_decode($line, true);
-                    $assignedUser = $entry['assignedTo'] ?? ($entry['assigned'] ?? null);
-                    if ($entry && $assignedUser && mb_strtolower(trim($assignedUser)) === mb_strtolower(trim($currentUser['username']))) {
-                        echo '<tr>';
-                        echo '<td>' . htmlspecialchars($entry['trackingNo'] ?? '') . '</td>';
-                        echo '<td>';
-                        if (!empty($entry['description'])) {
-                            echo '<span style="cursor:pointer; color:#0d6efd;" data-bs-toggle="tooltip" data-bs-title="' . htmlspecialchars($entry['description']) . '"><i class="bi bi-info-circle"></i></span>';
-                        }
-                        echo '</td>';
-                        // Durum badge
-                        $status = $entry['status'] ?? '-';
-                        $badge = 'secondary';
-                        if ($status === 'Bekliyor') $badge = 'warning';
-                        elseif ($status === 'Onaylandı') $badge = 'info';
-                        elseif ($status === 'Tamamlandı') $badge = 'success';
-                        echo '<td><span class="badge bg-' . $badge . '">' . htmlspecialchars($status) . '</span></td>';
-                        echo '<td>' . htmlspecialchars($entry['date'] ?? '-') . '</td>';
-                        // İletişim tooltip
-                        echo '<td>';
-                        if (!empty($entry['contact'])) {
-                            echo '<span style="cursor:pointer; color:#0d6efd;" data-bs-toggle="tooltip" data-bs-title="' . htmlspecialchars($entry['contact']) . '"><i class="bi bi-telephone"></i></span>';
-                        }
-                        echo '</td>';
-                        echo '<td><button type="button" class="btn btn-primary btn-sm" onclick="openUpdatePopup(' .
-                            '\'' . htmlspecialchars($entry['trackingNo']) . '\',\'' . htmlspecialchars($entry['status']) . '\')"><i class="bi bi-pencil-square"></i> Güncelle</button></td>';
-                        echo '</tr>';
-                    }
-                }
-            }
-            ?>
+            <?php foreach ($problems as $entry): ?>
+<tr>
+    <td><?= htmlspecialchars($entry['trackingNo'] ?? '') ?></td>
+    <td><?php if (!empty($entry['description'])): ?><span style="cursor:pointer; color:#0d6efd;" data-bs-toggle="tooltip" data-bs-title="<?= htmlspecialchars($entry['description']) ?>"><i class="bi bi-info-circle"></i></span><?php endif; ?></td>
+    <?php $status = $entry['status'] ?? '-';
+    $badge = 'secondary';
+    if ($status === 'Bekliyor') $badge = 'warning';
+    elseif ($status === 'Onaylandı') $badge = 'info';
+    elseif ($status === 'Tamamlandı') $badge = 'success'; ?>
+    <td><span class="badge bg-<?= $badge ?>"><?= htmlspecialchars($status) ?></span></td>
+    <td><?= htmlspecialchars($entry['date'] ?? '-') ?></td>
+    <td><?php if (!empty($entry['contact'])): ?><span style="cursor:pointer; color:#0d6efd;" data-bs-toggle="tooltip" data-bs-title="<?= htmlspecialchars($entry['contact']) ?>"><i class="bi bi-telephone"></i></span><?php endif; ?></td>
+    <td><button type="button" class="btn btn-primary btn-sm" onclick="openUpdatePopup('<?= htmlspecialchars($entry['trackingNo']) ?>','<?= htmlspecialchars($entry['status']) ?>')"><i class="bi bi-pencil-square"></i> Güncelle</button></td>
+    <td><button type="button" class="btn btn-outline-info btn-sm detail-btn" onclick="openDetailCardbox('<?= htmlspecialchars($entry['trackingNo']) ?>', this)"><i class="bi bi-search"></i> Detaylı İncele</button></td>
+</tr>
+<?php endforeach; ?>
             </tbody>
         </table>
         </div>
@@ -287,9 +313,10 @@ function closeDescPopup() {
         <div class="mb-3">
             <label class="form-label">Durum</label>
             <select name="update_status" id="update_status" class="form-select" required>
-                <option value="Başlanmadı">Başlanmadı</option>
-                <option value="Tamamlandı">Tamamlandı</option>
-            </select>
+<?php foreach ($faultStatuses as $key => $label): ?>
+    <option value="<?= $key ?>"><?= $label ?></option>
+<?php endforeach; ?>
+                </select>
         </div>
         <div class="d-flex justify-content-end gap-2">
             <button type="button" class="btn btn-secondary" onclick="closeUpdatePopup()">İptal</button>
@@ -404,5 +431,76 @@ if (feedbackForm) {
   };
 }
 </script>
+<script>
+const problemsData = <?php echo json_encode($problems, JSON_UNESCAPED_UNICODE); ?>;
+let openCardbox = null;
+function openDetailCardbox(trackingNo, btn) {
+    if (openCardbox) openCardbox.remove();
+    const p = problemsData.find(x => x.trackingNo === trackingNo);
+    if (!p) return;
+    let html = `<button class='close-btn' onclick='this.parentElement.remove(); openCardbox=null;'>&times;</button>`;
+    html += `<div class='mb-2'><b>Takip No:</b> ${p.trackingNo}</div>`;
+    html += `<div class='mb-2'><b>Detaylı Tanım:</b><br><span>${p.detailedDescription ?? '-'}</span></div>`;
+    if (p.filePath && p.filePath !== '') {
+        const fileName = p.filePath.split('/').pop();
+        const ext = fileName.split('.').pop().toLowerCase();
+        if (["jpg","jpeg","png","gif","bmp","webp"].includes(ext)) {
+            html += `<div class='mb-2'><img src='uploads/${fileName}' alt='Ekli Görsel' style='max-width:100%;max-height:180px;border-radius:8px;'></div>`;
+        } else {
+            html += `<div class='mb-2'><a href='uploads/${fileName}' target='_blank' class='btn btn-outline-primary btn-sm'><i class='bi bi-file-earmark-arrow-down'></i> Dosyayı Görüntüle/İndir</a></div>`;
+        }
+    } else {
+        html += `<div class='mb-2 text-muted'>Dosya eklenmemiş.</div>`;
+    }
+    html += `<div class='mb-2'><b>Birim:</b> ${p.department ?? '-'}</div>`;
+    html += `<div class='mb-2'><b>Arıza Türü:</b> ${p.faultType ?? '-'}</div>`;
+    html += `<div class='mb-2'><b>Durum:</b> ${p.status ?? '-'}</div>`;
+    html += `<div class='mb-2'><b>Tarih:</b> ${p.date ?? '-'}</div>`;
+    const card = document.createElement('div');
+    card.className = 'detail-cardbox';
+    card.innerHTML = html;
+    document.body.appendChild(card);
+    const rect = btn.getBoundingClientRect();
+    card.style.top = (window.scrollY + rect.bottom + 4) + 'px';
+    card.style.left = (window.scrollX + rect.left) + 'px';
+    card.style.display = 'block';
+    openCardbox = card;
+}
+document.addEventListener('click', function(e) {
+    if (openCardbox && !openCardbox.contains(e.target) && !e.target.classList.contains('detail-btn')) {
+        openCardbox.remove();
+        openCardbox = null;
+    }
+});
+</script>
+<!-- Detay Modalı -->
+<div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="detailModalLabel"><i class="bi bi-search"></i> Arıza Detayı</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Kapat"></button>
+      </div>
+      <div class="modal-body">
+        <ul class="nav nav-tabs mb-3" id="detailTab" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="detay-tab" data-bs-toggle="tab" data-bs-target="#detailTabDetayPane" type="button" role="tab">Detay</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="dosya-tab" data-bs-toggle="tab" data-bs-target="#detailTabDosyaPane" type="button" role="tab">Dosya</button>
+          </li>
+        </ul>
+        <div class="tab-content">
+          <div class="tab-pane fade show active" id="detailTabDetayPane" role="tabpanel">
+            <div id="detailTabDetay"></div>
+          </div>
+          <div class="tab-pane fade" id="detailTabDosyaPane" role="tabpanel">
+            <div id="detailTabDosya"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html> 
