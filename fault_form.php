@@ -164,10 +164,6 @@ $page = 'fault_form';
                         <button type="submit" class="btn btn-primary">Gönder</button>
                     </form>
                     <hr>
-                    <div class="text-muted small">
-                        <b>Tarayıcı:</b> <?= htmlspecialchars($userAgent) ?><br>
-                        <b>IP:</b> <?= htmlspecialchars($ip) ?>
-                    </div>
                 </div>
             </div>
         </div>

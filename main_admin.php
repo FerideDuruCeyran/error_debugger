@@ -516,8 +516,6 @@ function exportTableToPDF(tableID) {
             <th>Birim</th>
             <th>Tarih</th>
             <th>Durum</th>
-            <th>Tarayıcı</th>
-            <th>IP</th>
             <th>Admin Mesajı</th>
         </tr>
         </thead>
@@ -526,12 +524,10 @@ function exportTableToPDF(tableID) {
             <tr>
                 <td><?= htmlspecialchars($r['trackingNo']) ?></td>
                 <td><?= htmlspecialchars($r['faultType']) ?></td>
-                <td><?= htmlspecialchars($r['title']) ?></td>
+                <td><?= htmlspecialchars($r['title'] ?? '') ?></td>
                 <td><?= htmlspecialchars($r['department']) ?></td>
                 <td><?= htmlspecialchars($r['date']) ?></td>
                 <td><?= htmlspecialchars($r['status']) ?></td>
-                <td><?= htmlspecialchars($r['userAgent'] ?? '') ?></td>
-                <td><?= htmlspecialchars($r['ip'] ?? '') ?></td>
                 <td><?= htmlspecialchars($r['adminMessage'] ?? '') ?></td>
             </tr>
         <?php endforeach; ?>
