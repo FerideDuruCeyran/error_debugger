@@ -110,8 +110,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($recaptcha_data));
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Temporarily disable for testing
-            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false); // Temporarily disable for testing
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+            if (defined('SSL_CA_BUNDLE')) {
+                curl_setopt($ch, CURLOPT_CAINFO, SSL_CA_BUNDLE);
+            }
             curl_setopt($ch, CURLOPT_TIMEOUT, 15);
             curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
             
@@ -150,7 +153,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         error_log('reCAPTCHA response: ' . $recaptcha_result);
         error_log('reCAPTCHA JSON: ' . print_r($recaptcha_json, true));
         
-        // For testing purposes - bypass reCAPTCHA if it fails
         if (!$recaptcha_json || !isset($recaptcha_json['success']) || !$recaptcha_json['success']) {
             // Log the failure for debugging
             error_log('reCAPTCHA verification failed. Response: ' . $recaptcha_result);
@@ -158,11 +160,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 error_log('reCAPTCHA errors: ' . implode(', ', $recaptcha_json['error-codes']));
             }
             
-            // For now, allow the form to proceed (remove this in production)
-            // $error = 'reCAPTCHA doğrulaması başarısız. Lütfen tekrar deneyin.';
+            $error = 'reCAPTCHA doğrulaması başarısız. Lütfen tekrar deneyin.';
         }
         
-        // Continue with form processing
+        // Continue with form processing only if reCAPTCHA passed
+        if (empty($error)) {
         $faultType = trim($_POST['faultType'] ?? '');
         $subFaultType = trim($_POST['subFaultType'] ?? '');
         $department = trim($_POST['department'] ?? '');
@@ -203,6 +205,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ];
             log_problem($entry);
             $success = true;
+        }
         }
     }
 }
