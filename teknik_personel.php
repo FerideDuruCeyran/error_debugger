@@ -20,6 +20,8 @@ $successMsg = $errorMsg = '';
 if (isset($_POST['update_trackingNo'], $_POST['update_status'])) {
     $trackingNo = $_POST['update_trackingNo'];
     $newStatus = $_POST['update_status'];
+    $newDesc = $_POST['update_description'] ?? '';
+    $newContact = $_POST['update_contact'] ?? '';
     $updated = false;
     if (file_exists(PROBLEM_LOG_FILE)) {
         $lines = file(PROBLEM_LOG_FILE, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
@@ -33,6 +35,8 @@ if (isset($_POST['update_trackingNo'], $_POST['update_status'])) {
                 mb_strtolower(trim($assignedUser)) === mb_strtolower(trim($currentUser['username']))
             ) {
                 $entry['status'] = $newStatus;
+                if ($newDesc !== '') $entry['description'] = $newDesc;
+                if ($newContact !== '') $entry['contact'] = $newContact;
                 $lines[$i] = json_encode($entry, JSON_UNESCAPED_UNICODE);
                 $updated = true;
                 break;
@@ -84,6 +88,9 @@ if (isset($_POST['update_trackingNo'], $_POST['update_status'])) {
 </div>
 <div class="container">
 <?php if ($tab=='assigned'): ?>
+    <div class="alert alert-info">
+        <b>Oturumdaki kullanıcı:</b> <?= htmlspecialchars($currentUser['username']) ?><br>
+    </div>
     <div class="card shadow-sm mb-4">
       <div class="card-body">
         <h4 class="mb-3"><i class="bi bi-list-task"></i> Atanan İşlerim</h4>
@@ -138,7 +145,7 @@ if (isset($_POST['update_trackingNo'], $_POST['update_status'])) {
                         }
                         echo '</td>';
                         echo '<td><button type="button" class="btn btn-primary btn-sm" onclick="openUpdatePopup(' .
-                            '\'' . htmlspecialchars($entry['trackingNo']) . '\',\'' . htmlspecialchars($entry['status']) . '\',\'' . htmlspecialchars($entry['description'] ?? '') . '\',\'' . htmlspecialchars($entry['contact'] ?? '') . '\')"><i class="bi bi-pencil-square"></i> Güncelle</button></td>';
+                            '\'' . htmlspecialchars($entry['trackingNo']) . '\',\'' . htmlspecialchars($entry['status']) . '\')"><i class="bi bi-pencil-square"></i> Güncelle</button></td>';
                         echo '</tr>';
                     }
                 }
@@ -262,26 +269,21 @@ function closeDescPopup() {
                 <option value="Tamamlandı">Tamamlandı</option>
             </select>
         </div>
-        <div class="mb-3">
-            <label class="form-label">Açıklama</label>
-            <textarea name="update_description" id="update_description" class="form-control" rows="2" readonly></textarea>
-        </div>
-        <div class="mb-3">
-            <label class="form-label">İletişim</label>
-            <input type="text" name="update_contact" id="update_contact" class="form-control" readonly>
-        </div>
         <div class="d-flex justify-content-end gap-2">
             <button type="button" class="btn btn-secondary" onclick="closeUpdatePopup()">İptal</button>
             <button type="submit" class="btn btn-success">Kaydet</button>
         </div>
     </form>
+    <script>
+    document.getElementById('updateForm').addEventListener('submit', function() {
+      alert('Form submit edildi!');
+    });
+    </script>
 </div>
 <script>
-function openUpdatePopup(trackingNo, status, description, contact) {
+function openUpdatePopup(trackingNo, status) {
     document.getElementById('update_trackingNo').value = trackingNo;
     document.getElementById('update_status').value = status;
-    document.getElementById('update_description').value = description || '';
-    document.getElementById('update_contact').value = contact || '';
     document.getElementById('updateOverlay').style.display = 'block';
     document.getElementById('updatePopup').style.display = 'block';
 }

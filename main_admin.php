@@ -87,6 +87,7 @@ if (isset($_POST['assign_submit'], $_POST['assign_tracking'], $_POST['assign_per
             $entry = json_decode($line, true);
             if ($entry && isset($entry['trackingNo']) && $entry['trackingNo'] === $assignTracking) {
                 $entry['assignedTo'] = $assignPersonnel;
+                $entry['assigned'] = $assignPersonnel; // Teknik personel paneliyle tam uyum
                 $lines[$i] = json_encode($entry, JSON_UNESCAPED_UNICODE);
                 break;
             }
