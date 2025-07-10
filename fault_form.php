@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $content = trim($_POST['content'] ?? '');
     $department = trim($_POST['department'] ?? '');
     $contact = trim($_POST['contact'] ?? '');
-    $specs = trim($_POST['specs'] ?? '');
+    $detailedDescription = trim($_POST['detailedDescription'] ?? '');
     $date = date('Y-m-d H:i:s');
     $status = 'Bekliyor';
     $trackingNo = strtoupper(substr(md5(uniqid(rand(), true)), 0, 8));
@@ -60,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($content === '') $missing[] = 'Arıza İçeriği';
     if ($department === '') $missing[] = 'Birim';
     if ($contact === '') $missing[] = 'İletişim Bilgisi';
-    if ($specs === '') $missing[] = 'Bilgisayar Özellikleri';
+    if ($detailedDescription === '') $missing[] = 'Detaylı Tanımlama';
     if ($missing) {
         $error = 'Lütfen şu alanları doldurun: ' . implode(', ', $missing);
     } else {
@@ -81,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'status' => $status,
             'trackingNo' => $trackingNo,
             'contact' => $contact,
-            'specs' => $specs,
+            'detailedDescription' => $detailedDescription,
             'userAgent' => $userAgent,
             'ip' => $ip,
             'user' => 'anonim'
@@ -153,20 +153,12 @@ $page = 'fault_form';
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Arıza Başlığı</label>
-                            <input type="text" name="title" class="form-control" value="<?= htmlspecialchars($_POST['title'] ?? '') ?>" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Arıza İçeriği</label>
-                            <textarea name="content" class="form-control" rows="4" required><?= htmlspecialchars($_POST['content'] ?? '') ?></textarea>
+                            <label class="form-label">Detaylı Tanımlama</label>
+                            <textarea name="detailedDescription" class="form-control" rows="4" placeholder="Arızanın tüm detaylarını, varsa bilgisayar veya ekipman özelliklerini, gözlemlerinizi ve açıklamalarınızı buraya yazınız." required><?= htmlspecialchars($_POST['detailedDescription'] ?? '') ?></textarea>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Dosya Ekle</label>
                             <input type="file" name="file" class="form-control">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Bilgisayar Özellikleri</label>
-                            <textarea name="specs" class="form-control" rows="2" placeholder="Marka/Model, İşletim Sistemi, RAM, vb." required><?= htmlspecialchars($_POST['specs'] ?? '') ?></textarea>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">İletişim Bilgisi</label>
