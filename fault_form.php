@@ -45,8 +45,7 @@ $ip = $_SERVER['REMOTE_ADDR'] ?? '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $faultType = trim($_POST['faultType'] ?? '');
-    $title = trim($_POST['title'] ?? '');
-    $content = trim($_POST['content'] ?? '');
+    $subFaultType = trim($_POST['subFaultType'] ?? '');
     $department = trim($_POST['department'] ?? '');
     $contact = trim($_POST['contact'] ?? '');
     $detailedDescription = trim($_POST['detailedDescription'] ?? '');
@@ -56,8 +55,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $filePath = '';
     $missing = [];
     if ($faultType === '') $missing[] = 'Arıza Türü';
-    if ($title === '') $missing[] = 'Arıza Başlığı';
-    if ($content === '') $missing[] = 'Arıza İçeriği';
     if ($department === '') $missing[] = 'Birim';
     if ($contact === '') $missing[] = 'İletişim Bilgisi';
     if ($detailedDescription === '') $missing[] = 'Detaylı Tanımlama';
@@ -73,15 +70,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $entry = [
             'faultType' => $faultType,
-            'title' => $title,
-            'content' => $content,
-            'filePath' => $filePath,
+            'subFaultType' => $subFaultType,
             'department' => $department,
             'date' => $date,
             'status' => $status,
             'trackingNo' => $trackingNo,
             'contact' => $contact,
             'detailedDescription' => $detailedDescription,
+            'filePath' => $filePath,
             'userAgent' => $userAgent,
             'ip' => $ip,
             'user' => 'anonim'

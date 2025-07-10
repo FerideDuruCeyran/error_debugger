@@ -15,6 +15,25 @@ if (!$currentUser || $currentUser['role'] !== 'TeknikPersonel') {
     exit;
 }
 $tab = $_GET['tab'] ?? 'assigned';
+// --- GÜNCELLEME İŞLEMİ ---
+$successMsg = $errorMsg = '';
+if (isset($_POST['update_trackingNo'], $_POST['update_status'])) {
+    $trackingNo = $_POST['update_trackingNo'];
+    $newStatus = $_POST['update_status'];
+    if (file_exists(PROBLEM_LOG_FILE)) {
+        $lines = file(PROBLEM_LOG_FILE, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        foreach ($lines as $i => $line) {
+            $entry = json_decode($line, true);
+            if ($entry && isset($entry['trackingNo']) && $entry['trackingNo'] === $trackingNo && isset($entry['assignedTo']) && $entry['assignedTo'] === $currentUser['username']) {
+                $entry['status'] = $newStatus;
+                $lines[$i] = json_encode($entry, JSON_UNESCAPED_UNICODE);
+                $successMsg = 'Durum başarıyla güncellendi.';
+                break;
+            }
+        }
+        file_put_contents(PROBLEM_LOG_FILE, implode("\n", $lines) . "\n");
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="tr">
@@ -54,13 +73,19 @@ $tab = $_GET['tab'] ?? 'assigned';
     <div class="card shadow-sm mb-4">
       <div class="card-body">
         <h4 class="mb-3"><i class="bi bi-list-task"></i> Atanan İşlerim</h4>
+        <?php if ($successMsg): ?>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <?= $successMsg ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>
+            </div>
+        <?php endif; ?>
         <div class="mb-3">
           <input type="text" id="tableSearch" class="form-control" placeholder="Tabloda ara...">
         </div>
         <div class="table-responsive">
         <table class="table table-bordered table-striped align-middle mb-0" id="assignedTable">
             <thead class="table-primary">
-            <tr><th>Takip No</th><th>Açıklama</th><th>Durum</th><th>Tarih</th><th>İletişim</th><th>Mesajlaş</th><th>Güncelle</th></tr>
+            <tr><th>Takip No</th><th>Açıklama</th><th>Durum</th><th>Tarih</th><th>İletişim</th><th>Güncelle</th></tr>
             </thead>
             <tbody>
             <?php
@@ -91,7 +116,6 @@ $tab = $_GET['tab'] ?? 'assigned';
                             echo '<span style="cursor:pointer; color:#0d6efd;" data-bs-toggle="tooltip" data-bs-title="' . htmlspecialchars($entry['contact']) . '"><i class="bi bi-telephone"></i></span>';
                         }
                         echo '</td>';
-                        echo '<td><a href="tracking.php?trackingNo=' . urlencode($entry['trackingNo']) . '" class="btn btn-sm btn-outline-primary"><i class="bi bi-chat-dots"></i> Mesajlaş</a></td>';
                         echo '<td><button type="button" class="btn btn-primary btn-sm" onclick="openUpdatePopup(' .
                             '\'' . htmlspecialchars($entry['trackingNo']) . '\',\'' . htmlspecialchars($entry['status']) . '\',\'' . htmlspecialchars($entry['description'] ?? '') . '\',\'' . htmlspecialchars($entry['contact'] ?? '') . '\')"><i class="bi bi-pencil-square"></i> Güncelle</button></td>';
                         echo '</tr>';
