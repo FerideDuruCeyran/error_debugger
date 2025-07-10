@@ -99,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   box-shadow: 0 12px 36px rgba(0,92,169,0.18);
   transform: translateY(-6px) scale(1.025);
   border-color: #0d6efd;
-  border-radius: 48px 16px 48px 16px;
+  border-radius: 48px 32px 48px 32px;
 }
 body.dark-mode .login-card {
   background: #232a3a;
