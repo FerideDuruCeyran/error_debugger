@@ -133,6 +133,7 @@ if ($_SESSION['user'] === 'user') {
     <title>Main Admin Paneli - Akdeniz Üniversitesi</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 </head>
 <body class="bg-light">
 <?php
@@ -150,11 +151,6 @@ $teknikPersonel = array_filter($users, function($u){ return $u['role']==='Teknik
       <span>Akdeniz Üniversitesi</span>
     </a>
     <a class="btn btn-outline-light ms-2" href="logout.php"><i class="bi bi-box-arrow-right"></i> Çıkış</a>
-    <ul class="navbar-nav ms-3">
-      <li class="nav-item"><a class="nav-link<?= $tab=='arizalar'?' active':'' ?>" href="main_admin.php?tab=arizalar"><i class="bi bi-list-task"></i> Tüm Arızalar</a></li>
-      <li class="nav-item"><a class="nav-link<?= $tab=='altadmin'?' active':'' ?>" href="main_admin.php?tab=altadmin"><i class="bi bi-person-badge"></i> Alt Adminler</a></li>
-      <li class="nav-item"><a class="nav-link<?= $tab=='teknik'?' active':'' ?>" href="main_admin.php?tab=teknik"><i class="bi bi-person-gear"></i> Teknik Personeller</a></li>
-    </ul>
   </div>
 </nav>
 <div class="container mb-4">
@@ -162,6 +158,13 @@ $teknikPersonel = array_filter($users, function($u){ return $u['role']==='Teknik
     <div class="col-md-8">
       <h2 class="mb-0">Main Admin Paneli</h2>
       <div class="text-muted small">Ana Yönetici: <b><?= htmlspecialchars($_SESSION['user']) ?></b></div>
+    </div>
+    <div class="col-md-4 text-md-end mt-2 mt-md-0">
+      <ul class="nav nav-tabs justify-content-end" style="border-bottom: 2px solid #e3f0fa;">
+        <li class="nav-item"><a class="nav-link<?= $tab=='arizalar'?' active':'' ?>" href="main_admin.php?tab=arizalar"><i class="bi bi-list-task"></i> Tüm Arızalar</a></li>
+        <li class="nav-item"><a class="nav-link<?= $tab=='altadmin'?' active':'' ?>" href="main_admin.php?tab=altadmin"><i class="bi bi-person-badge"></i> Alt Adminler</a></li>
+        <li class="nav-item"><a class="nav-link<?= $tab=='teknik'?' active':'' ?>" href="main_admin.php?tab=teknik"><i class="bi bi-person-gear"></i> Teknik Personeller</a></li>
+      </ul>
     </div>
   </div>
 </div>

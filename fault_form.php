@@ -3,6 +3,40 @@ session_start();
 require_once 'config.php';
 require_once 'log_error.php';
 
+// Birimler (görselden alınan örnekler)
+$departments = [
+    "Diş Hekimliği Fakültesi", "Eczacılık Fakültesi", "Edebiyat Fakültesi", "Eğitim Fakültesi", "Fen Fakültesi", "Güzel Sanatlar Fakültesi", "Hemşirelik Fakültesi", "Hukuk Fakültesi", "İktisadi ve İdari Bilimler Fakültesi", "İlahiyat Fakültesi", "İletişim Fakültesi", "Kemer Denizcilik Fakültesi", "Kumluca Sağlık Bilimleri Fakültesi", "Hukuk Müşavirliği", "Ziraat Fakültesi", "Adalet Meslek Yüksekokulu", "Alanya Meslek Yüksekokulu", "Demre Dr. Hasan Ünal Meslek Yüksekokulu", "Elmalı Meslek Yüksekokulu", "Finike Meslek Yüksekokulu", "Gastronomi ve Mutfak Sanatları Meslek Yüksekokulu", "Korkuteli Meslek Yüksekokulu", "Kumluca Meslek Yüksekokulu", "Manavgat Meslek Yüksekokulu", "Serik Meslek Yüksekokulu", "Sosyal Bilimler Meslek Yüksekokulu", "Teknik Bilimler Meslek Yüksekokulu", "Turizm İşletmeciliği ve Otelcilik Yüksekokulu", "Antalya Devlet Konservatuvarı", "Yabancı Diller Yüksekokulu", "Akdeniz Uygarlıkları Araştırma Enstitüsü", "Eğitim Bilimleri Enstitüsü", "Fen Bilimleri Enstitüsü", "Güzel Sanatlar Enstitüsü", "Prof.Dr.Tuncer Karpuzoğlu Organ Nakli Enstitüsü", "Sağlık Bilimleri Enstitüsü", "Sosyal Bilimler Enstitüsü", "Atatürk İlkeleri ve İnkılap Tarihi Bölüm Başkanlığı", "Beden Eğitimi ve Spor Bölüm Başkanlığı", "Enformatik Bölüm Başkanlığı", "Güzel Sanatlar Bölüm Başkanlığı", "Türk Dili Bölüm Başkanlığı", "Hukuk Müşavirliği", "Kütüphane ve Dokümantasyon Daire Başkanlığı", "Öğrenci İşleri Daire Başkanlığı", "Sağlık Kültür ve Spor Daire Başkanlığı", "Strateji Geliştirme Daire Başkanlığı", "Uluslararası İlişkiler Ofisi", "Yapı İşleri ve Teknik Daire Başkanlığı", "Basın Yayın ve Halkla İlişkiler Müdürlüğü", "Döner Sermaye İşletme Müdürlüğü", "Hastane", "İdari ve Mali İşler Daire Başkanlığı", "İnsan Kaynakları Daire Başkanlığı", "Kariyer Planlama ve Mezun İzleme Uygulama ve Araştırma Merkezi", "Kütüphane ve Dokümantasyon Daire Başkanlığı", "Öğrenci İşleri Daire Başkanlığı", "Sağlık Kültür ve Spor Daire Başkanlığı", "Strateji Geliştirme Daire Başkanlığı", "Teknoloji Transfer Ofisi", "TÖMER", "Yabancı Diller Yüksekokulu", "Diğer (liste dışı birim)"
+];
+
+// Arıza türleri ve alt türler (örnekler)
+$faultTypes = [
+    ["id"=>1, "name"=>"MAKİNE/TESİSAT"],
+    ["id"=>2, "name"=>"ELEKTRİK"],
+    ["id"=>3, "name"=>"İNŞAAT"]
+];
+$subFaultTypes = [
+    ["id"=>1, "name"=>"Temiz Su Sistemi", "parent_id"=>1],
+    ["id"=>2, "name"=>"Pis Su Sistemi", "parent_id"=>1],
+    ["id"=>3, "name"=>"Buhar Sistemi", "parent_id"=>1],
+    ["id"=>4, "name"=>"Yangın Sistemi", "parent_id"=>1],
+    ["id"=>5, "name"=>"Klima Sistemi", "parent_id"=>1],
+    ["id"=>6, "name"=>"Havalandırma", "parent_id"=>1],
+    ["id"=>7, "name"=>"Makine/Teknik", "parent_id"=>1],
+    ["id"=>8, "name"=>"Yangın Algılama", "parent_id"=>2],
+    ["id"=>9, "name"=>"Aydınlatma", "parent_id"=>2],
+    ["id"=>10, "name"=>"Enerji Dağıtım", "parent_id"=>2],
+    ["id"=>11, "name"=>"Enerji Kaynağı", "parent_id"=>2],
+    ["id"=>12, "name"=>"Kampüs Aydınlatma", "parent_id"=>2],
+    ["id"=>13, "name"=>"Elektrik Raporu", "parent_id"=>2],
+    ["id"=>14, "name"=>"Çatı/Duvar", "parent_id"=>3],
+    ["id"=>15, "name"=>"Boya", "parent_id"=>3],
+    ["id"=>16, "name"=>"Kapı/Pencere", "parent_id"=>3],
+    ["id"=>17, "name"=>"Zemin Kaplama", "parent_id"=>3],
+    ["id"=>18, "name"=>"Kaynak/Montaj", "parent_id"=>3],
+    ["id"=>19, "name"=>"Nem ve Küf", "parent_id"=>3],
+    ["id"=>20, "name"=>"İnşaat Raporu", "parent_id"=>3]
+];
+
 $success = false;
 $error = '';
 $trackingNo = '';
@@ -95,23 +129,28 @@ $page = 'fault_form';
                     <?php endif; ?>
                     <form method="post" enctype="multipart/form-data">
                         <div class="mb-3">
-                            <label class="form-label">Arıza Türü</label>
-                            <select name="faultType" id="faultType" class="form-select" required onchange="document.getElementById('otherTypeBox').style.display = this.value==='Diğer' ? 'block' : 'none';">
+                            <label class="form-label">Birim</label>
+                            <select name="department" class="form-select" required>
                                 <option value="">Seçiniz</option>
-                                <option value="Bilgisayar">Bilgisayar</option>
-                                <option value="Ağ">Ağ</option>
-                                <option value="Yazıcı">Yazıcı</option>
-                                <option value="Elektrik">Elektrik</option>
-                                <option value="İnternet">İnternet</option>
-                                <option value="Donanım">Donanım</option>
-                                <option value="Yazılım">Yazılım</option>
-                                <option value="Ortam">Ortam</option>
-                                <option value="Diğer">Diğer</option>
+                                <?php foreach ($departments as $dep): ?>
+                                    <option value="<?= htmlspecialchars($dep) ?>" <?= (isset($_POST['department']) && $_POST['department']==$dep)?'selected':'' ?>><?= htmlspecialchars($dep) ?></option>
+                                <?php endforeach; ?>
                             </select>
                         </div>
-                        <div class="mb-3" id="otherTypeBox" style="display:none;">
-                            <label class="form-label">Diğer Arıza Türü</label>
-                            <input type="text" name="otherFaultType" class="form-control">
+                        <div class="mb-3">
+                            <label class="form-label">Arıza Türü</label>
+                            <select name="faultType" id="faultType" class="form-select" required>
+                                <option value="">Seçiniz</option>
+                                <?php foreach ($faultTypes as $ft): ?>
+                                    <option value="<?= $ft['id'] ?>" <?= (isset($_POST['faultType']) && $_POST['faultType']==$ft['id'])?'selected':'' ?>><?= htmlspecialchars($ft['name']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="mb-3" id="subFaultTypeBox" style="display:none;">
+                            <label class="form-label">Alt Arıza Türü</label>
+                            <select name="subFaultType" id="subFaultType" class="form-select">
+                                <option value="">Seçiniz</option>
+                            </select>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Arıza Başlığı</label>
@@ -128,10 +167,6 @@ $page = 'fault_form';
                         <div class="mb-3">
                             <label class="form-label">Bilgisayar Özellikleri</label>
                             <textarea name="specs" class="form-control" rows="2" placeholder="Marka/Model, İşletim Sistemi, RAM, vb." required><?= htmlspecialchars($_POST['specs'] ?? '') ?></textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Birim</label>
-                            <input type="text" name="department" class="form-control" value="<?= htmlspecialchars($_POST['department'] ?? '') ?>" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">İletişim Bilgisi</label>
@@ -151,10 +186,34 @@ $page = 'fault_form';
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+// Alt arıza türleri verisi (JS'ye aktarılıyor)
+const subFaultTypes = <?= json_encode($subFaultTypes, JSON_UNESCAPED_UNICODE) ?>;
 document.addEventListener('DOMContentLoaded', function() {
-    var sel = document.getElementById('faultType');
-    var box = document.getElementById('otherTypeBox');
-    if (sel.value === 'Diğer') box.style.display = 'block';
+    const faultTypeSel = document.getElementById('faultType');
+    const subBox = document.getElementById('subFaultTypeBox');
+    const subSel = document.getElementById('subFaultType');
+    function updateSubTypes() {
+        const parentId = parseInt(faultTypeSel.value);
+        subSel.innerHTML = '<option value="">Seçiniz</option>';
+        if (!isNaN(parentId)) {
+            let found = false;
+            subFaultTypes.forEach(function(sub) {
+                if (sub.parent_id === parentId) {
+                    found = true;
+                    const opt = document.createElement('option');
+                    opt.value = sub.id;
+                    opt.textContent = sub.name;
+                    subSel.appendChild(opt);
+                }
+            });
+            subBox.style.display = found ? 'block' : 'none';
+        } else {
+            subBox.style.display = 'none';
+        }
+    }
+    faultTypeSel.addEventListener('change', updateSubTypes);
+    // İlk yüklemede de çalışsın (edit durumunda)
+    updateSubTypes();
 });
 </script>
 </body>
