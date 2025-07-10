@@ -159,8 +159,18 @@ $teknisyenler = array_filter($users, function($u) { return $u['role'] === 'Tekni
       <img src="https://upload.wikimedia.org/wikipedia/tr/d/dc/Akdeniz_%C3%9Cniversitesi_logosu.IMG_0838.png" class="akdeniz-logo" alt="Akdeniz Üniversitesi">
       <span>Akdeniz Üniversitesi</span>
     </a>
-    <a class="btn btn-outline-light ms-2" href="logout.php"><i class="bi bi-box-arrow-right"></i> Çıkış</a>
-    <a class="btn btn-outline-light" href="messages.php"><i class="bi bi-chat-dots"></i> Mesajlar</a>
+    <div class="d-flex ms-auto align-items-center gap-2">
+      <span class="badge bg-light text-primary me-2">
+        <i class="bi bi-person-circle"></i> <?= htmlspecialchars($currentUser['username'] ?? 'Misafir') ?>
+        <span class="badge bg-secondary ms-1"><?= htmlspecialchars($currentUser['role'] ?? '') ?></span>
+      </span>
+      <button class="btn-icon" id="darkModeToggle" title="Karanlık Mod"><i class="bi bi-moon"></i></button>
+      <button class="btn-icon position-relative" id="notifBtn" title="Bildirimler" data-bs-toggle="modal" data-bs-target="#notifModal"><i class="bi bi-bell"></i><span id="notifDot" class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle d-none"></span></button>
+      <button class="btn-icon" id="helpBtn" title="Yardım" data-bs-toggle="modal" data-bs-target="#helpModal"><i class="bi bi-question-circle"></i></button>
+      <a class="btn btn-outline-light" href="index.php"><i class="bi bi-house"></i> Ana Sayfa</a>
+      <a class="btn btn-outline-light" href="messages.php"><i class="bi bi-chat-dots"></i> Mesajlar</a>
+      <a class="btn btn-outline-light" href="logout.php"><i class="bi bi-box-arrow-right"></i> Çıkış</a>
+    </div>
   </div>
 </nav>
 <div class="container mb-4">
@@ -201,17 +211,29 @@ $teknisyenler = array_filter($users, function($u) { return $u['role'] === 'Tekni
         <div class="alert alert-success"> <?= htmlspecialchars($updateMsg) ?> </div>
     <?php endif; ?>
     <?php if ($successMsg): ?>
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <?= $successMsg ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    <?php endif; ?>
-    <?php if ($errorMsg): ?>
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <?= $errorMsg ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    <?php endif; ?>
+<div class="toast-container position-fixed top-0 end-0 p-3">
+  <div class="toast align-items-center text-bg-success border-0 show" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body">
+        <?= $successMsg ?>
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
+<?php if ($errorMsg): ?>
+<div class="toast-container position-fixed top-0 end-0 p-3">
+  <div class="toast align-items-center text-bg-danger border-0 show" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body">
+        <?= $errorMsg ?>
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] === 'assigned' && $currentUser['role'] === 'Admin'): ?>
 <h3>Atanan İşler</h3>
 <table class="table table-bordered table-striped align-middle mb-4">
@@ -357,6 +379,54 @@ if (file_exists(PROBLEM_LOG_FILE)) {
     </script>
     </div>
 </div>
+<!-- Bildirim Merkezi Modal -->
+<div class="modal fade" id="notifModal" tabindex="-1" aria-labelledby="notifModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-end">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="notifModalLabel"><i class="bi bi-bell"></i> Bildirim Merkezi</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Kapat"></button>
+      </div>
+      <div class="modal-body">
+        <ul class="list-group">
+          <li class="list-group-item"><i class="bi bi-info-circle text-primary"></i> Yeni bir arıza size atandı.</li>
+          <li class="list-group-item"><i class="bi bi-check-circle text-success"></i> Bir arıza tamamlandı.</li>
+          <li class="list-group-item"><i class="bi bi-chat-dots text-info"></i> Yeni mesajınız var.</li>
+        </ul>
+        <div class="text-end mt-2"><button class="btn btn-sm btn-outline-secondary" onclick="clearNotifs()">Tümünü Temizle</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Yardım/SSS Modal -->
+<div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="helpModalLabel"><i class="bi bi-question-circle"></i> Yardım & SSS</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Kapat"></button>
+      </div>
+      <div class="modal-body">
+        <h6>Sıkça Sorulan Sorular</h6>
+        <ul>
+          <li><b>Takip numaramı kaybettim, ne yapmalıyım?</b><br>İletişim bilgilerinizle birlikte destek ekibine başvurun.</li>
+          <li><b>Arıza durumunu nasıl takip ederim?</b><br>"Takip" sekmesinden takip numaranızla sorgulayabilirsiniz.</li>
+          <li><b>Şifremi unuttum, nasıl sıfırlarım?</b><br>Giriş ekranındaki "Şifremi unuttum" bağlantısını kullanın.</li>
+        </ul>
+        <hr>
+        <h6>Geri Bildirim</h6>
+        <form id="feedbackForm">
+          <div class="mb-2">
+            <label class="form-label">Görüşünüz</label>
+            <textarea class="form-control" name="feedback" rows="2" required></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm">Gönder</button>
+        </form>
+        <div id="feedbackMsg" class="mt-2"></div>
+      </div>
+    </div>
+  </div>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 function showAssignForm(trackingNo) {
@@ -364,6 +434,42 @@ function showAssignForm(trackingNo) {
 }
 function hideAssignForm(trackingNo) {
     document.getElementById('assignForm-' + trackingNo).classList.add('d-none');
+}
+// Karanlık mod toggle
+const darkToggle = document.getElementById('darkModeToggle');
+function setDarkMode(on) {
+  if (on) {
+    document.body.classList.add('dark-mode');
+    darkToggle.innerHTML = '<i class="bi bi-brightness-high"></i>';
+    localStorage.setItem('darkMode', '1');
+  } else {
+    document.body.classList.remove('dark-mode');
+    darkToggle.innerHTML = '<i class="bi bi-moon"></i>';
+    localStorage.setItem('darkMode', '0');
+  }
+}
+darkToggle.onclick = () => setDarkMode(!document.body.classList.contains('dark-mode'));
+if (localStorage.getItem('darkMode') === '1') setDarkMode(true);
+// Bildirim ve yardım butonları (modal açma placeholder)
+document.getElementById('helpBtn').onclick = function() {
+  alert('Yardım ve SSS yakında burada!');
+};
+document.getElementById('notifBtn').onclick = function() {
+  alert('Bildirim merkezi yakında burada!');
+};
+// Bildirimleri temizle (örnek)
+function clearNotifs() {
+  document.querySelector('#notifModal .list-group').innerHTML = '<li class="list-group-item text-muted">Tüm bildirimler temizlendi.</li>';
+  document.getElementById('notifDot').classList.add('d-none');
+}
+// Geri bildirim formu
+const feedbackForm = document.getElementById('feedbackForm');
+if (feedbackForm) {
+  feedbackForm.onsubmit = function(e) {
+    e.preventDefault();
+    document.getElementById('feedbackMsg').innerHTML = '<span class="text-success">Teşekkürler, geri bildiriminiz alındı.</span>';
+    feedbackForm.reset();
+  };
 }
 </script>
 </body>

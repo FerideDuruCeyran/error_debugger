@@ -46,8 +46,15 @@ if (isset($_POST['change_password'])) {
       <img src="https://upload.wikimedia.org/wikipedia/tr/d/dc/Akdeniz_%C3%9Cniversitesi_logosu.IMG_0838.png" class="akdeniz-logo" alt="Akdeniz Üniversitesi">
       <span>Akdeniz Üniversitesi</span>
     </a>
-    <a class="btn btn-outline-light ms-2" href="logout.php"><i class="bi bi-box-arrow-right"></i> Çıkış</a>
-    <a class="btn btn-outline-light" href="messages.php"><i class="bi bi-chat-dots"></i> Mesajlar</a>
+    <div class="d-flex ms-auto align-items-center gap-2">
+      <span class="badge bg-light text-primary me-2">
+        <i class="bi bi-person-circle"></i> <?= htmlspecialchars($currentUser['username'] ?? 'Misafir') ?>
+        <span class="badge bg-secondary ms-1"><?= htmlspecialchars($currentUser['role'] ?? '') ?></span>
+      </span>
+      <a class="btn btn-outline-light" href="index.php"><i class="bi bi-house"></i> Ana Sayfa</a>
+      <a class="btn btn-outline-light" href="messages.php"><i class="bi bi-chat-dots"></i> Mesajlar</a>
+      <a class="btn btn-outline-light" href="logout.php"><i class="bi bi-box-arrow-right"></i> Çıkış</a>
+    </div>
   </div>
 </nav>
 <div class="container mb-4">
@@ -73,16 +80,29 @@ if (isset($_POST['change_password'])) {
                     </ul>
                     <h5 class="mb-3">Şifre Değiştir</h5>
                     <?php if ($successMsg): ?>
-                        <div class="alert alert-success alert-dismissible fade show" role="alert">
-                            <?= $successMsg ?>
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>
-                        </div>
-                    <?php elseif ($errorMsg): ?>
-                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                            <?= $errorMsg ?>
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>
-                        </div>
-                    <?php endif; ?>
+<div class="toast-container position-fixed top-0 end-0 p-3">
+  <div class="toast align-items-center text-bg-success border-0 show" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body">
+        <?= $successMsg ?>
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
+<?php if ($errorMsg): ?>
+<div class="toast-container position-fixed top-0 end-0 p-3">
+  <div class="toast align-items-center text-bg-danger border-0 show" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body">
+        <?= $errorMsg ?>
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
                     <form method="post">
                         <div class="mb-2">
                             <label class="form-label">Mevcut Şifre</label>

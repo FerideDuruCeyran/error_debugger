@@ -31,14 +31,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Şifre Sıfırlama - Akdeniz Üniversitesi</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+    .reset-card {
+      border-radius: 32px;
+      box-shadow: 0 4px 24px rgba(0,92,169,0.13);
+      border: 2px solid #e3f0fa;
+      transition: box-shadow 0.22s, transform 0.16s, border-color 0.18s, border-radius 0.22s;
+      background: #fff;
+      max-width: 420px;
+      margin: 0 auto;
+    }
+    .reset-card:hover {
+      box-shadow: 0 12px 36px rgba(0,92,169,0.18);
+      transform: translateY(-6px) scale(1.025);
+      border-color: #0d6efd;
+      border-radius: 48px 16px 48px 16px;
+    }
+    body.dark-mode .reset-card {
+      background: #232a3a;
+      color: #e3e3e3;
+      border-color: #333;
+    }
+    body.dark-mode .reset-card:hover {
+      border-color: #0d6efd;
+      box-shadow: 0 12px 36px rgba(13,110,253,0.18);
+    }
+    </style>
 </head>
-<body class="login-bg">
-    <div class="card login-card">
-        <div class="card-header">
-            <a href="login.php" class="btn btn-outline-light mb-2"><i class="bi bi-arrow-left"></i> Girişe Dön</a>
+<body class="login-bg d-flex align-items-center justify-content-center" style="min-height:100vh;">
+  <div class="container">
+    <div class="row justify-content-center align-items-center" style="min-height:100vh;">
+      <div class="col-12 col-sm-8 col-md-6 col-lg-5 col-xl-4">
+        <a href="login.php" class="btn btn-outline-primary mb-3 d-inline-flex align-items-center" style="position:relative; z-index:2;"><i class="bi bi-arrow-left me-1"></i> Geri</a>
+        <div class="reset-card shadow-sm">
+          <div class="card-header text-center bg-white border-0 d-flex flex-column align-items-center">
+            <a href="index.php">
+              <img src="https://upload.wikimedia.org/wikipedia/tr/d/dc/Akdeniz_%C3%9Cniversitesi_logosu.IMG_0838.png" class="akdeniz-logo mb-2" alt="Akdeniz Üniversitesi" style="width: 80px; height: 80px; object-fit: contain;">
+            </a>
             <h5 class="mt-2 mb-0">Şifre Sıfırlama</h5>
-        </div>
-        <div class="card-body">
+          </div>
+          <div class="card-body">
             <?php if ($success): ?>
                 <div class="alert alert-success"> <?= $success ?> </div>
             <?php else: ?>
@@ -57,8 +90,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <button type="submit" class="btn btn-primary w-100">Sıfırlama Bağlantısı Gönder</button>
             </form>
             <?php endif; ?>
+          </div>
         </div>
+      </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+  // Dark mode localStorage'dan okunmaya devam etsin
+  if (localStorage.getItem('darkMode') === '1') document.body.classList.add('dark-mode');
+  </script>
 </body>
 </html> 

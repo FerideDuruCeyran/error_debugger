@@ -151,8 +151,18 @@ $teknikPersonel = array_filter($users, function($u){ return $u['role']==='Teknik
       <img src="https://upload.wikimedia.org/wikipedia/tr/d/dc/Akdeniz_%C3%9Cniversitesi_logosu.IMG_0838.png" class="akdeniz-logo" alt="Akdeniz Üniversitesi">
       <span>Akdeniz Üniversitesi</span>
     </a>
-    <a class="btn btn-outline-light ms-2" href="logout.php"><i class="bi bi-box-arrow-right"></i> Çıkış</a>
-    <a class="btn btn-outline-light" href="messages.php"><i class="bi bi-chat-dots"></i> Mesajlar</a>
+    <div class="d-flex ms-auto align-items-center gap-2">
+      <span class="badge bg-light text-primary me-2">
+        <i class="bi bi-person-circle"></i> <?= htmlspecialchars($users[0]['username'] ?? 'Misafir') ?>
+        <span class="badge bg-secondary ms-1"><?= htmlspecialchars($users[0]['role'] ?? '') ?></span>
+      </span>
+      <button class="btn-icon" id="darkModeToggle" title="Karanlık Mod"><i class="bi bi-moon"></i></button>
+      <button class="btn-icon position-relative" id="notifBtn" title="Bildirimler" data-bs-toggle="modal" data-bs-target="#notifModal"><i class="bi bi-bell"></i><span id="notifDot" class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle d-none"></span></button>
+      <button class="btn-icon" id="helpBtn" title="Yardım" data-bs-toggle="modal" data-bs-target="#helpModal"><i class="bi bi-question-circle"></i></button>
+      <a class="btn btn-outline-light" href="index.php"><i class="bi bi-house"></i> Ana Sayfa</a>
+      <a class="btn btn-outline-light" href="messages.php"><i class="bi bi-chat-dots"></i> Mesajlar</a>
+      <a class="btn btn-outline-light" href="logout.php"><i class="bi bi-box-arrow-right"></i> Çıkış</a>
+    </div>
   </div>
 </nav>
 <div class="container mb-4">
@@ -260,17 +270,29 @@ $teknikPersonel = array_filter($users, function($u){ return $u['role']==='Teknik
 <div class="container">
     <h1 class="mb-4">Main Admin Paneli</h1>
     <?php if ($successMsg): ?>
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <?= $successMsg ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    <?php endif; ?>
-    <?php if ($errorMsg): ?>
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <?= $errorMsg ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    <?php endif; ?>
+<div class="toast-container position-fixed top-0 end-0 p-3">
+  <div class="toast align-items-center text-bg-success border-0 show" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body">
+        <?= $successMsg ?>
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
+<?php if ($errorMsg): ?>
+<div class="toast-container position-fixed top-0 end-0 p-3">
+  <div class="toast align-items-center text-bg-danger border-0 show" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body">
+        <?= $errorMsg ?>
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
     <h2>Kullanıcılar ve Yetkiler</h2>
     <!-- Kullanıcı ekleme formu -->
     <form method="post" class="row g-2 mb-3">
@@ -345,12 +367,11 @@ $teknikPersonel = array_filter($users, function($u){ return $u['role']==='Teknik
         </div>
     </form>
     <h2>Tüm Arızalar ve Durumları</h2>
-<a href="?export=csv" class="btn btn-success mb-2">Excel'e Aktar</a>
-<div class="row mb-2">
-  <div class="col-md-3">
+<div class="row mb-2 align-items-end g-2">
+  <div class="col-md-3 col-6">
     <input type="text" id="tableSearch" class="form-control" placeholder="Tabloda ara...">
   </div>
-  <div class="col-md-2">
+  <div class="col-md-2 col-6">
     <select id="statusFilter" class="form-select">
       <option value="">Tüm Durumlar</option>
       <option value="Bekliyor">Bekliyor</option>
@@ -358,14 +379,18 @@ $teknikPersonel = array_filter($users, function($u){ return $u['role']==='Teknik
       <option value="Tamamlandı">Tamamlandı</option>
     </select>
   </div>
-  <div class="col-md-2">
+  <div class="col-md-2 col-6">
     <input type="text" id="departmentFilter" class="form-control" placeholder="Birim ara...">
   </div>
-  <div class="col-md-2">
+  <div class="col-md-2 col-6">
     <input type="date" id="dateStart" class="form-control" placeholder="Başlangıç Tarihi">
   </div>
-  <div class="col-md-2">
+  <div class="col-md-2 col-6">
     <input type="date" id="dateEnd" class="form-control" placeholder="Bitiş Tarihi">
+  </div>
+  <div class="col-md-1 col-12 text-end">
+    <button class="btn btn-success mb-1 w-100" onclick="exportTableToExcel('reportTable')"><i class="bi bi-file-earmark-excel"></i></button>
+    <button class="btn btn-danger w-100" onclick="exportTableToPDF('reportTable')"><i class="bi bi-file-earmark-pdf"></i></button>
   </div>
 </div>
 <table id="reportTable" class="table table-bordered table-striped align-middle mb-4">
@@ -422,7 +447,40 @@ document.getElementById('statusFilter').addEventListener('change', filterTable);
 document.getElementById('departmentFilter').addEventListener('keyup', filterTable);
 document.getElementById('dateStart').addEventListener('change', filterTable);
 document.getElementById('dateEnd').addEventListener('change', filterTable);
+// Excel dışa aktarım
+function exportTableToExcel(tableID) {
+  var table = document.getElementById(tableID);
+  var html = table.outerHTML.replace(/ /g, '%20');
+  var a = document.createElement('a');
+  a.href = 'data:application/vnd.ms-excel,' + html;
+  a.download = 'ariza_raporu.xls';
+  a.click();
+}
+// PDF dışa aktarım (basit, tabloyu yeni pencerede yazdır)
+function exportTableToPDF(tableID) {
+  var table = document.getElementById(tableID).outerHTML;
+  var win = window.open('', '', 'height=700,width=900');
+  win.document.write('<html><head><title>Arıza Raporu</title>');
+  win.document.write('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">');
+  win.document.write('</head><body>');
+  win.document.write(table);
+  win.document.write('</body></html>');
+  win.document.close();
+  win.print();
+}
 </script>
+    <h2>Arıza İstatistikleri</h2>
+<div class="row mb-4">
+  <div class="col-md-4 mb-3">
+    <canvas id="chartType"></canvas>
+  </div>
+  <div class="col-md-4 mb-3">
+    <canvas id="chartStatus"></canvas>
+  </div>
+  <div class="col-md-4 mb-3">
+    <canvas id="chartDept"></canvas>
+  </div>
+</div>
     <h2>Teknik Personel Ata</h2>
     <form method="post" class="mb-4">
         <div class="row g-2 align-items-end">
@@ -481,6 +539,153 @@ document.getElementById('dateEnd').addEventListener('change', filterTable);
     </table>
     </div>
 </div>
+<!-- Bildirim Merkezi Modal -->
+<div class="modal fade" id="notifModal" tabindex="-1" aria-labelledby="notifModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-end">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="notifModalLabel"><i class="bi bi-bell"></i> Bildirim Merkezi</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Kapat"></button>
+      </div>
+      <div class="modal-body">
+        <ul class="list-group">
+          <li class="list-group-item"><i class="bi bi-info-circle text-primary"></i> Yeni bir arıza size atandı.</li>
+          <li class="list-group-item"><i class="bi bi-check-circle text-success"></i> Bir arıza tamamlandı.</li>
+          <li class="list-group-item"><i class="bi bi-chat-dots text-info"></i> Yeni mesajınız var.</li>
+        </ul>
+        <div class="text-end mt-2"><button class="btn btn-sm btn-outline-secondary" onclick="clearNotifs()">Tümünü Temizle</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Yardım/SSS Modal -->
+<div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="helpModalLabel"><i class="bi bi-question-circle"></i> Yardım & SSS</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Kapat"></button>
+      </div>
+      <div class="modal-body">
+        <h6>Sıkça Sorulan Sorular</h6>
+        <ul>
+          <li><b>Takip numaramı kaybettim, ne yapmalıyım?</b><br>İletişim bilgilerinizle birlikte destek ekibine başvurun.</li>
+          <li><b>Arıza durumunu nasıl takip ederim?</b><br>"Takip" sekmesinden takip numaranızla sorgulayabilirsiniz.</li>
+          <li><b>Şifremi unuttum, nasıl sıfırlarım?</b><br>Giriş ekranındaki "Şifremi unuttum" bağlantısını kullanın.</li>
+        </ul>
+        <hr>
+        <h6>Geri Bildirim</h6>
+        <form id="feedbackForm">
+          <div class="mb-2">
+            <label class="form-label">Görüşünüz</label>
+            <textarea class="form-control" name="feedback" rows="2" required></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm">Gönder</button>
+        </form>
+        <div id="feedbackMsg" class="mt-2"></div>
+      </div>
+    </div>
+  </div>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Karanlık mod toggle
+const darkToggle = document.getElementById('darkModeToggle');
+function setDarkMode(on) {
+  if (on) {
+    document.body.classList.add('dark-mode');
+    darkToggle.innerHTML = '<i class="bi bi-brightness-high"></i>';
+    localStorage.setItem('darkMode', '1');
+  } else {
+    document.body.classList.remove('dark-mode');
+    darkToggle.innerHTML = '<i class="bi bi-moon"></i>';
+    localStorage.setItem('darkMode', '0');
+  }
+}
+darkToggle.onclick = () => setDarkMode(!document.body.classList.contains('dark-mode'));
+if (localStorage.getItem('darkMode') === '1') setDarkMode(true);
+// Bildirim ve yardım butonları (modal açma placeholder)
+document.getElementById('helpBtn').onclick = function() {
+  alert('Yardım ve SSS yakında burada!');
+};
+document.getElementById('notifBtn').onclick = function() {
+  alert('Bildirim merkezi yakında burada!');
+};
+// Bildirimleri temizle (örnek)
+function clearNotifs() {
+  document.querySelector('#notifModal .list-group').innerHTML = '<li class="list-group-item text-muted">Tüm bildirimler temizlendi.</li>';
+  document.getElementById('notifDot').classList.add('d-none');
+}
+// Geri bildirim formu
+const feedbackForm = document.getElementById('feedbackForm');
+if (feedbackForm) {
+  feedbackForm.onsubmit = function(e) {
+    e.preventDefault();
+    document.getElementById('feedbackMsg').innerHTML = '<span class="text-success">Teşekkürler, geri bildiriminiz alındı.</span>';
+    feedbackForm.reset();
+  };
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// PHP'den JS'ye veri aktarımı
+<?php
+// Arıza türü, durum ve birim dağılımı için sayımlar
+$typeCounts = [];
+$statusCounts = [];
+$deptCounts = [];
+if (file_exists(PROBLEM_LOG_FILE)) {
+    $lines = file(PROBLEM_LOG_FILE, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        $entry = json_decode($line, true);
+        if ($entry) {
+            $type = $entry['faultType'] ?? '-';
+            $status = $entry['status'] ?? '-';
+            $dept = $entry['department'] ?? '-';
+            $typeCounts[$type] = ($typeCounts[$type] ?? 0) + 1;
+            $statusCounts[$status] = ($statusCounts[$status] ?? 0) + 1;
+            $deptCounts[$dept] = ($deptCounts[$dept] ?? 0) + 1;
+        }
+    }
+}
+?>
+const typeData = {
+  labels: <?= json_encode(array_keys($typeCounts), JSON_UNESCAPED_UNICODE) ?>,
+  datasets: [{
+    label: 'Arıza Türü',
+    data: <?= json_encode(array_values($typeCounts)) ?>,
+    backgroundColor: ['#0d6efd','#20c997','#ffc107','#fd7e14','#6f42c1','#dc3545','#198754','#0dcaf0','#adb5bd','#343a40']
+  }]
+};
+const statusData = {
+  labels: <?= json_encode(array_keys($statusCounts), JSON_UNESCAPED_UNICODE) ?>,
+  datasets: [{
+    label: 'Durum',
+    data: <?= json_encode(array_values($statusCounts)) ?>,
+    backgroundColor: ['#ffc107','#0dcaf0','#198754','#dc3545','#adb5bd']
+  }]
+};
+const deptData = {
+  labels: <?= json_encode(array_slice(array_keys($deptCounts),0,8), JSON_UNESCAPED_UNICODE) ?>,
+  datasets: [{
+    label: 'Birim (İlk 8)',
+    data: <?= json_encode(array_slice(array_values($deptCounts),0,8)) ?>,
+    backgroundColor: ['#0d6efd','#20c997','#ffc107','#fd7e14','#6f42c1','#dc3545','#198754','#0dcaf0']
+  }]
+};
+// Grafikler
+new Chart(document.getElementById('chartType'), {
+  type: 'doughnut', data: typeData,
+  options: { plugins: { legend: { position: 'bottom' } }, responsive:true }
+});
+new Chart(document.getElementById('chartStatus'), {
+  type: 'pie', data: statusData,
+  options: { plugins: { legend: { position: 'bottom' } }, responsive:true }
+});
+new Chart(document.getElementById('chartDept'), {
+  type: 'bar', data: deptData,
+  options: { plugins: { legend: { display: false } }, responsive:true, indexAxis:'y', scales:{x:{beginAtZero:true}} }
+});
+</script>
 </body>
 </html> 

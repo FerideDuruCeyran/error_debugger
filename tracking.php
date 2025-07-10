@@ -44,7 +44,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <img src="https://upload.wikimedia.org/wikipedia/tr/d/dc/Akdeniz_%C3%9Cniversitesi_logosu.IMG_0838.png" class="akdeniz-logo" alt="Akdeniz Üniversitesi">
       Akdeniz Üniversitesi
     </a>
-    <div>
+    <div class="d-flex ms-auto align-items-center gap-2">
+      <button class="btn-icon" id="darkModeToggle" title="Karanlık Mod"><i class="bi bi-moon"></i></button>
       <a class="btn btn-outline-light me-2<?= $page=='fault_form'?' active':'' ?>" href="fault_form.php">Arıza Bildir</a>
       <a class="btn btn-outline-light me-2<?= $page=='tracking'?' active':'' ?>" href="tracking.php">Takip</a>
       <a class="btn btn-outline-light me-2" href="index.php"><i class="bi bi-house"></i> Ana Sayfa</a>
@@ -99,6 +100,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Karanlık mod toggle
+const darkToggle = document.getElementById('darkModeToggle');
+function setDarkMode(on) {
+  if (on) {
+    document.body.classList.add('dark-mode');
+    darkToggle.innerHTML = '<i class=\"bi bi-brightness-high\"></i>';
+    localStorage.setItem('darkMode', '1');
+  } else {
+    document.body.classList.remove('dark-mode');
+    darkToggle.innerHTML = '<i class=\"bi bi-moon\"></i>';
+    localStorage.setItem('darkMode', '0');
+  }
+}
+darkToggle.onclick = () => setDarkMode(!document.body.classList.contains('dark-mode'));
+if (localStorage.getItem('darkMode') === '1') setDarkMode(true);
+</script>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 </body>
 </html> 

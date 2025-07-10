@@ -4,10 +4,14 @@ body {
     color: #222;
     min-height: 100vh;
 }
+/* Navbar */
 .navbar {
-    background: #005ca9 !important;
-    box-shadow: 0 4px 24px rgba(0,92,169,0.10);
+    background: linear-gradient(90deg, #005ca9 60%, #0d6efd 100%) !important;
+    box-shadow: 0 4px 24px rgba(0,92,169,0.13);
     min-height: 70px;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
 }
 .navbar .navbar-brand {
     font-weight: bold;
@@ -43,43 +47,43 @@ body {
     border-color: #fff !important;
     box-shadow: 0 4px 16px rgba(0,92,169,0.12);
 }
+
+/* Kartlar */
 .card {
     border-radius: 18px;
-    box-shadow: 0 6px 32px rgba(0,92,169,0.10);
+    box-shadow: 0 6px 32px rgba(0,92,169,0.13);
     border: none;
     transition: box-shadow 0.2s;
 }
 .card:hover {
-    box-shadow: 0 12px 48px rgba(0,92,169,0.16);
+    box-shadow: 0 12px 48px rgba(0,92,169,0.18);
 }
 .card-header {
-    background: #005ca9;
+    background: linear-gradient(90deg, #005ca9 60%, #0d6efd 100%);
     color: #fff;
     border-radius: 18px 18px 0 0;
     font-weight: 600;
     font-size: 1.25rem;
+    display: flex;
+    align-items: center;
 }
-.btn-primary {
-    background: linear-gradient(90deg, #005ca9 60%, #0d6efd 100%);
-    border-color: #005ca9;
+
+/* Badge ve durumlar */
+.badge {
+    font-size: 1.05em;
+    padding: 0.5em 1em;
     border-radius: 8px;
-    font-weight: 500;
-    box-shadow: 0 2px 8px rgba(0,92,169,0.08);
-    transition: background 0.2s, box-shadow 0.2s;
 }
-.btn-primary:hover, .btn-primary:focus {
-    background: linear-gradient(90deg, #003e6b 60%, #0d6efd 100%);
-    border-color: #003e6b;
-    box-shadow: 0 4px 16px rgba(0,92,169,0.12);
-}
-.table-primary {
-    background: #e3f0fa !important;
-    color: #005ca9 !important;
-}
+.badge.bg-warning { color: #856404 !important; background: #ffeeba !important; }
+.badge.bg-success { color: #155724 !important; background: #d4edda !important; }
+.badge.bg-info { color: #0c5460 !important; background: #bee5eb !important; }
+.badge.bg-danger { color: #721c24 !important; background: #f8d7da !important; }
+
+/* Tablo */
 .table {
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 2px 12px rgba(0,92,169,0.06);
+    box-shadow: 0 2px 12px rgba(0,92,169,0.08);
 }
 .table th, .table td {
     vertical-align: middle !important;
@@ -91,110 +95,54 @@ body {
     background-color: #e3f0fa;
     transition: background 0.2s;
 }
-hr {
-    border-top: 1.5px solid #005ca9;
-}
-.alert {
-    border-radius: 10px;
-    box-shadow: 0 2px 12px rgba(0,92,169,0.08);
-    font-size: 1.05rem;
-}
-.alert-success {
-    background: linear-gradient(90deg, #e6f9f0 60%, #d1f7e7 100%);
-    color: #1a7f4c;
-}
-.alert-danger {
-    background: linear-gradient(90deg, #ffeaea 60%, #ffe3e3 100%);
-    color: #b02a37;
-}
-.alert-info {
-    background: linear-gradient(90deg, #e3f0fa 60%, #f4f8fb 100%);
-    color: #005ca9;
-}
-input.form-control, select.form-select, textarea.form-control {
-    border-radius: 10px;
-    border: 1.5px solid #b6d4fe;
-    font-size: 1.08rem;
-    padding: 0.7em 1em;
-    transition: border-color 0.2s, box-shadow 0.2s;
-}
-input.form-control:focus, select.form-select:focus, textarea.form-control:focus {
-    border-color: #005ca9;
-    box-shadow: 0 0 0 2px #e3f0fa;
-}
-/* Giriş ekranı arka planı */
-.login-bg {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, #e3f0fa 0%, #f4f8fb 100%);
-}
-/* Giriş kutusu */
-.login-card {
-    width: 100%;
-    max-width: 370px;
-    margin: 0 auto;
-    border-radius: 22px;
-    box-shadow: 0 8px 40px rgba(0,92,169,0.18);
-    background: #fff;
-    padding: 0;
-    overflow: hidden;
-    border: none;
-    animation: loginFadeIn 0.7s cubic-bezier(.4,2,.6,1) 1;
-}
-@keyframes loginFadeIn {
-    from { opacity: 0; transform: translateY(40px); }
-    to { opacity: 1; transform: translateY(0); }
-}
 
-/* Logo ve başlık hizalama */
-.login-card .akdeniz-logo {
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-    margin-bottom: 8px;
-    width: 90px;
-    height: 90px;
-    border-radius: 16px;
-    background: #fff;
-    box-shadow: 0 2px 12px rgba(0,92,169,0.10);
-}
-.login-card .card-header {
-    text-align: center;
-    background: linear-gradient(90deg, #005ca9 60%, #0d6efd 100%);
-    color: #fff;
-    border-radius: 22px 22px 0 0;
-    padding: 2rem 1.5rem 1rem 1.5rem;
-    border: none;
-}
-.login-card .card-body {
-    padding: 2rem 1.5rem 1.5rem 1.5rem;
-}
+/* Toast bildirimler */
+.toast-container { z-index: 2000; }
+.toast { min-width: 260px; font-size: 1.08em; border-radius: 12px; }
+.toast .toast-body { padding: 1em 1.2em; }
 
 /* Mobil uyum */
 @media (max-width: 480px) {
-    .login-card {
-        max-width: 98vw;
-        border-radius: 12px;
-    }
-    .login-card .akdeniz-logo {
-        width: 60px;
-        height: 60px;
-        border-radius: 10px;
-    }
-    .login-card .card-header {
-        padding: 1.2rem 0.7rem 0.7rem 0.7rem;
-        border-radius: 12px 12px 0 0;
-    }
-    .login-card .card-body {
-        padding: 1.2rem 0.7rem 1rem 0.7rem;
-    }
-}
-@media (max-width: 768px) {
-    .navbar .akdeniz-logo { width: 40px; height: 40px; }
+    .navbar .akdeniz-logo { width: 36px; height: 36px; }
     .navbar .navbar-brand { font-size: 1.1rem; }
     .card { border-radius: 12px; }
     .card-header { border-radius: 12px 12px 0 0; font-size: 1.05rem; }
     .table { font-size: 0.97rem; }
+    .btn, .form-control, .form-select { font-size: 1.1em; padding: 0.7em 1em; border-radius: 10px; }
+}
+
+/* Karanlık mod (temel) */
+body.dark-mode {
+    background: #181c24 !important;
+    color: #e3e3e3 !important;
+}
+body.dark-mode .navbar { background: linear-gradient(90deg, #232a3a 60%, #0d6efd 100%) !important; }
+body.dark-mode .card { background: #232a3a; color: #e3e3e3; }
+body.dark-mode .table { background: #232a3a; color: #e3e3e3; }
+body.dark-mode .badge { background: #333; color: #fff; }
+body.dark-mode .btn-outline-light { color: #fff !important; border-color: #fff !important; } 
+
+/* Karanlık mod geçiş animasyonu */
+body, .navbar, .card, .table, .badge {
+    transition: background 0.3s, color 0.3s;
+}
+
+/* Bildirim ve yardım ikonları için hover */
+.navbar .btn-icon {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 1.4em;
+    margin-left: 8px;
+    margin-right: 2px;
+    transition: color 0.2s, background 0.2s;
+    border-radius: 50%;
+    padding: 6px 8px;
+}
+.navbar .btn-icon:hover, .navbar .btn-icon:focus {
+    background: #fff2;
+    color: #ffd700;
+}
+body.dark-mode .navbar .btn-icon:hover {
+    color: #ffe066;
 } 
