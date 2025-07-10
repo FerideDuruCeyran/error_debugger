@@ -4,46 +4,46 @@ require_once 'config.php';
 require_once 'log_error.php';
 
 // DEBUG: SSL and reCAPTCHA status
-if (php_sapi_name() !== 'cli') {
-    echo '<div style="background:#222;color:#fff;padding:10px;font-size:14px;">';
-    // Check CA bundle
-    $caPath = defined('SSL_CA_BUNDLE') ? SSL_CA_BUNDLE : '(not defined)';
-    $caExists = (defined('SSL_CA_BUNDLE') && file_exists(SSL_CA_BUNDLE)) ? 'YES' : 'NO';
-    echo "<b>SSL CA Bundle:</b> $caPath (Exists: $caExists)<br>";
-    // Show reCAPTCHA keys (mask secret)
-    $siteKey = defined('RECAPTCHA_SITE_KEY') ? RECAPTCHA_SITE_KEY : '(not defined)';
-    $secretKey = defined('RECAPTCHA_SECRET_KEY') ? RECAPTCHA_SECRET_KEY : '(not defined)';
-    $maskedSecret = substr($secretKey, 0, 4) . str_repeat('*', max(0, strlen($secretKey)-8)) . substr($secretKey, -4);
-    echo "<b>reCAPTCHA Site Key:</b> $siteKey<br>";
-    echo "<b>reCAPTCHA Secret Key:</b> $maskedSecret<br>";
-    // Test HTTPS request to Google reCAPTCHA API
-    $testUrl = 'https://www.google.com/recaptcha/api/siteverify';
-    $testResult = false;
-    if (function_exists('curl_init')) {
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $testUrl);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
-        if (defined('SSL_CA_BUNDLE')) {
-            curl_setopt($ch, CURLOPT_CAINFO, SSL_CA_BUNDLE);
-        }
-        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-        $resp = curl_exec($ch);
-        $err = curl_error($ch);
-        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        if ($resp !== false && $code === 200) {
-            $testResult = 'SUCCESS';
-        } else {
-            $testResult = 'FAIL: ' . htmlspecialchars($err);
-        }
-    } else {
-        $testResult = 'cURL not available';
-    }
-    echo "<b>Test HTTPS to Google reCAPTCHA API:</b> $testResult";
-    echo '</div>';
-}
+// if (php_sapi_name() !== 'cli') {
+//     echo '<div style="background:#222;color:#fff;padding:10px;font-size:14px;">';
+//     // Check CA bundle
+//     $caPath = defined('SSL_CA_BUNDLE') ? SSL_CA_BUNDLE : '(not defined)';
+//     $caExists = (defined('SSL_CA_BUNDLE') && file_exists(SSL_CA_BUNDLE)) ? 'YES' : 'NO';
+//     echo "<b>SSL CA Bundle:</b> $caPath (Exists: $caExists)<br>";
+//     // Show reCAPTCHA keys (mask secret)
+//     $siteKey = defined('RECAPTCHA_SITE_KEY') ? RECAPTCHA_SITE_KEY : '(not defined)';
+//     $secretKey = defined('RECAPTCHA_SECRET_KEY') ? RECAPTCHA_SECRET_KEY : '(not defined)';
+//     $maskedSecret = substr($secretKey, 0, 4) . str_repeat('*', max(0, strlen($secretKey)-8)) . substr($secretKey, -4);
+//     echo "<b>reCAPTCHA Site Key:</b> $siteKey<br>";
+//     echo "<b>reCAPTCHA Secret Key:</b> $maskedSecret<br>";
+//     // Test HTTPS request to Google reCAPTCHA API
+//     $testUrl = 'https://www.google.com/recaptcha/api/siteverify';
+//     $testResult = false;
+//     if (function_exists('curl_init')) {
+//         $ch = curl_init();
+//         curl_setopt($ch, CURLOPT_URL, $testUrl);
+//         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+//         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+//         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+//         if (defined('SSL_CA_BUNDLE')) {
+//             curl_setopt($ch, CURLOPT_CAINFO, SSL_CA_BUNDLE);
+//         }
+//         curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+//         $resp = curl_exec($ch);
+//         $err = curl_error($ch);
+//         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+//         curl_close($ch);
+//         if ($resp !== false && $code === 200) {
+//             $testResult = 'SUCCESS';
+//         } else {
+//             $testResult = 'FAIL: ' . htmlspecialchars($err);
+//         }
+//     } else {
+//         $testResult = 'cURL not available';
+//     }
+//     echo "<b>Test HTTPS to Google reCAPTCHA API:</b> $testResult";
+//     echo '</div>';
+// }
 
 // Birimler (görselden alınan örnekler)
 $departments = [
