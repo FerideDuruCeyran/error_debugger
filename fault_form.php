@@ -3,12 +3,56 @@ session_start();
 require_once 'config.php';
 require_once 'log_error.php';
 
+
+// DEBUG: SSL and reCAPTCHA status
+// if (php_sapi_name() !== 'cli') {
+//     echo '<div style="background:#222;color:#fff;padding:10px;font-size:14px;">';
+//     // Check CA bundle
+//     $caPath = defined('SSL_CA_BUNDLE') ? SSL_CA_BUNDLE : '(not defined)';
+//     $caExists = (defined('SSL_CA_BUNDLE') && file_exists(SSL_CA_BUNDLE)) ? 'YES' : 'NO';
+//     echo "<b>SSL CA Bundle:</b> $caPath (Exists: $caExists)<br>";
+//     // Show reCAPTCHA keys (mask secret)
+//     $siteKey = defined('RECAPTCHA_SITE_KEY') ? RECAPTCHA_SITE_KEY : '(not defined)';
+//     $secretKey = defined('RECAPTCHA_SECRET_KEY') ? RECAPTCHA_SECRET_KEY : '(not defined)';
+//     $maskedSecret = substr($secretKey, 0, 4) . str_repeat('*', max(0, strlen($secretKey)-8)) . substr($secretKey, -4);
+//     echo "<b>reCAPTCHA Site Key:</b> $siteKey<br>";
+//     echo "<b>reCAPTCHA Secret Key:</b> $maskedSecret<br>";
+//     // Test HTTPS request to Google reCAPTCHA API
+//     $testUrl = 'https://www.google.com/recaptcha/api/siteverify';
+//     $testResult = false;
+//     if (function_exists('curl_init')) {
+//         $ch = curl_init();
+//         curl_setopt($ch, CURLOPT_URL, $testUrl);
+//         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+//         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+//         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+//         if (defined('SSL_CA_BUNDLE')) {
+//             curl_setopt($ch, CURLOPT_CAINFO, SSL_CA_BUNDLE);
+//         }
+//         curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+//         $resp = curl_exec($ch);
+//         $err = curl_error($ch);
+//         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+//         curl_close($ch);
+//         if ($resp !== false && $code === 200) {
+//             $testResult = 'SUCCESS';
+//         } else {
+//             $testResult = 'FAIL: ' . htmlspecialchars($err);
+//         }
+//     } else {
+//         $testResult = 'cURL not available';
+//     }
+//     echo "<b>Test HTTPS to Google reCAPTCHA API:</b> $testResult";
+//     echo '</div>';
+// }
+
 // Ortak arıza durumları
 $faultStatuses = [
     'Bekliyor' => 'Bekliyor',
     'Onaylandı' => 'Onaylandı',
     'Tamamlandı' => 'Tamamlandı'
 ];
+
 
 // Birimler (görselden alınan örnekler)
 $departments = [
@@ -51,6 +95,14 @@ $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
 $ip = $_SERVER['REMOTE_ADDR'] ?? '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    // reCAPTCHA validation
+    $recaptcha_secret = RECAPTCHA_SECRET_KEY;
+    $recaptcha_response = $_POST['g-recaptcha-response'] ?? '';
+    
+    if (empty($recaptcha_response)) {
+        $error = 'Lütfen "Ben robot değilim" kutucuğunu işaretleyin.';
+
     $faultType = trim($_POST['faultType'] ?? '');
     $subFaultType = trim($_POST['subFaultType'] ?? '');
     $department = trim($_POST['department'] ?? '');
@@ -67,30 +119,122 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($detailedDescription === '') $missing[] = 'Detaylı Tanımlama';
     if ($missing) {
         $error = 'Lütfen şu alanları doldurun: ' . implode(', ', $missing);
+
     } else {
-        if (isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK) {
-            $uploadDir = __DIR__ . '/uploads/';
-            if (!is_dir($uploadDir)) mkdir($uploadDir);
-            $fileName = basename($_FILES['file']['name']);
-            $filePath = $uploadDir . $trackingNo . '_' . $fileName;
-            move_uploaded_file($_FILES['file']['tmp_name'], $filePath);
-        }
-        $entry = [
-            'faultType' => $faultType,
-            'subFaultType' => $subFaultType,
-            'department' => $department,
-            'date' => $date,
-            'status' => $status,
-            'trackingNo' => $trackingNo,
-            'contact' => $contact,
-            'detailedDescription' => $detailedDescription,
-            'filePath' => $filePath,
-            'userAgent' => $userAgent,
-            'ip' => $ip,
-            'user' => 'anonim'
+        $recaptcha_url = 'https://www.google.com/recaptcha/api/siteverify';
+        $recaptcha_data = [
+            'secret' => $recaptcha_secret,
+            'response' => $recaptcha_response,
+            'remoteip' => $_SERVER['REMOTE_ADDR'] ?? ''
         ];
-        log_problem($entry);
-        $success = true;
+        
+        // Simplified reCAPTCHA verification
+        $recaptcha_result = false;
+        
+        // Try cURL first (more reliable)
+        if (function_exists('curl_init')) {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $recaptcha_url);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($recaptcha_data));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+            if (defined('SSL_CA_BUNDLE')) {
+                curl_setopt($ch, CURLOPT_CAINFO, SSL_CA_BUNDLE);
+            }
+            curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+            curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
+            
+            $recaptcha_result = curl_exec($ch);
+            $curl_error = curl_error($ch);
+            curl_close($ch);
+            
+            if ($curl_error) {
+                error_log('cURL error: ' . $curl_error);
+            }
+        }
+        
+        // Fallback to file_get_contents if cURL fails
+        if ($recaptcha_result === false) {
+            $context = stream_context_create([
+                'http' => [
+                    'method' => 'POST',
+                    'header' => 'Content-Type: application/x-www-form-urlencoded',
+                    'content' => http_build_query($recaptcha_data),
+                    'timeout' => 15,
+                    'user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                ],
+                'ssl' => [
+                    'verify_peer' => true,
+                    'verify_peer_name' => true,
+                    'cafile' => SSL_CA_BUNDLE
+                ]
+            ]);
+            
+            $recaptcha_result = @file_get_contents($recaptcha_url, false, $context);
+        }
+        
+        $recaptcha_json = json_decode($recaptcha_result, true);
+        
+        // Debug logging
+        error_log('reCAPTCHA response: ' . $recaptcha_result);
+        error_log('reCAPTCHA JSON: ' . print_r($recaptcha_json, true));
+        
+        if (!$recaptcha_json || !isset($recaptcha_json['success']) || !$recaptcha_json['success']) {
+            // Log the failure for debugging
+            error_log('reCAPTCHA verification failed. Response: ' . $recaptcha_result);
+            if (isset($recaptcha_json['error-codes'])) {
+                error_log('reCAPTCHA errors: ' . implode(', ', $recaptcha_json['error-codes']));
+            }
+            
+            $error = 'reCAPTCHA doğrulaması başarısız. Lütfen tekrar deneyin.';
+        }
+        
+        // Continue with form processing only if reCAPTCHA passed
+        if (empty($error)) {
+        $faultType = trim($_POST['faultType'] ?? '');
+        $subFaultType = trim($_POST['subFaultType'] ?? '');
+        $department = trim($_POST['department'] ?? '');
+        $contact = trim($_POST['contact'] ?? '');
+        $detailedDescription = trim($_POST['detailedDescription'] ?? '');
+        $date = date('Y-m-d H:i:s');
+        $status = 'Bekliyor';
+        $trackingNo = strtoupper(substr(md5(uniqid(rand(), true)), 0, 8));
+        $filePath = '';
+        $missing = [];
+        if ($faultType === '') $missing[] = 'Arıza Türü';
+        if ($department === '') $missing[] = 'Birim';
+        if ($contact === '') $missing[] = 'İletişim Bilgisi';
+        if ($detailedDescription === '') $missing[] = 'Detaylı Tanımlama';
+        if ($missing) {
+            $error = 'Lütfen şu alanları doldurun: ' . implode(', ', $missing);
+        } else {
+            if (isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK) {
+                $uploadDir = __DIR__ . '/uploads/';
+                if (!is_dir($uploadDir)) mkdir($uploadDir);
+                $fileName = basename($_FILES['file']['name']);
+                $filePath = $uploadDir . $trackingNo . '_' . $fileName;
+                move_uploaded_file($_FILES['file']['tmp_name'], $filePath);
+            }
+            $entry = [
+                'faultType' => $faultType,
+                'subFaultType' => $subFaultType,
+                'department' => $department,
+                'date' => $date,
+                'status' => $status,
+                'trackingNo' => $trackingNo,
+                'contact' => $contact,
+                'detailedDescription' => $detailedDescription,
+                'filePath' => $filePath,
+                'userAgent' => $userAgent,
+                'ip' => $ip,
+                'user' => 'anonim'
+            ];
+            log_problem($entry);
+            $success = true;
+        }
+        }
     }
 }
 $page = 'fault_form';
@@ -102,6 +246,7 @@ $page = 'fault_form';
     <title>Arıza Bildir - Akdeniz Üniversitesi</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body class="bg-light">
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
@@ -167,6 +312,9 @@ $page = 'fault_form';
                         <div class="mb-3">
                             <label class="form-label">İletişim Bilgisi</label>
                             <input type="text" name="contact" class="form-control" value="<?= htmlspecialchars($_POST['contact'] ?? '') ?>" required>
+                        </div>
+                        <div class="mb-3">
+                            <div class="g-recaptcha" data-sitekey="<?= RECAPTCHA_SITE_KEY ?>"></div>
                         </div>
                         <button type="submit" class="btn btn-primary">Gönder</button>
                     </form>
