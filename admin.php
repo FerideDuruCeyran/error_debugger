@@ -233,6 +233,23 @@ if (file_exists(PROBLEM_LOG_FILE)) {
       top: 40px;
       left: 0;
       display: none;
+      font-size: 0.9rem;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    @media (max-width: 768px) {
+      .detail-cardbox {
+        min-width: 280px;
+        max-width: 90vw;
+        left: 5vw !important;
+        right: 5vw;
+        position: fixed;
+        top: 50% !important;
+        transform: translateY(-50%);
+      }
     }
     .detail-cardbox .close-btn {
       position: absolute;
@@ -243,6 +260,22 @@ if (file_exists(PROBLEM_LOG_FILE)) {
       font-size: 1.2rem;
       color: #888;
       cursor: pointer;
+      transition: color 0.2s;
+    }
+    .detail-cardbox .close-btn:hover {
+      color: #dc3545;
+    }
+    /* Dark mode için cardbox */
+    body.dark-mode .detail-cardbox {
+      background: #2d3748;
+      color: #e2e8f0;
+      border-color: #4a5568;
+    }
+    body.dark-mode .detail-cardbox .close-btn {
+      color: #a0aec0;
+    }
+    body.dark-mode .detail-cardbox .close-btn:hover {
+      color: #fc8181;
     }
     .table.detail-table { position: relative; }
     /* Tablo güzelleştirme */
@@ -253,25 +286,52 @@ if (file_exists(PROBLEM_LOG_FILE)) {
       background-color: #e3f0fa;
       transition: background 0.2s;
     }
+    .table th {
+      background: linear-gradient(135deg, #0d6efd, #0b5ed7);
+      color: white;
+      font-weight: 600;
+      border: none;
+      padding: 12px 8px;
+    }
+    .table td {
+      padding: 12px 8px;
+      vertical-align: middle;
+    }
     .badge {
-      font-size: 1em;
-      padding: 0.5em 0.8em;
-      border-radius: 0.7em;
+      font-size: 0.85em;
+      padding: 0.4em 0.7em;
+      border-radius: 0.6em;
+      font-weight: 500;
+    }
+    .btn-group .btn {
+      border-radius: 0.5em;
+      margin: 0 1px;
     }
     .btn-primary, .btn-outline-info, .btn-danger, .btn-success {
-      transition: box-shadow 0.2s, background 0.2s;
+      transition: all 0.2s ease;
     }
     .btn-primary:hover, .btn-outline-info:hover, .btn-danger:hover, .btn-success:hover {
-      box-shadow: 0 2px 8px rgba(0,0,0,0.10);
-      filter: brightness(1.08);
+      box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+      transform: translateY(-1px);
     }
     .form-select, .form-control {
       border-radius: 0.7em;
       border: 1.5px solid #b6d4fe;
+      transition: all 0.2s ease;
     }
     .form-select:focus, .form-control:focus {
       border-color: #0d6efd;
       box-shadow: 0 0 0 0.15rem rgba(13,110,253,.15);
+      transform: translateY(-1px);
+    }
+    .card {
+      border-radius: 12px;
+      border: none;
+      transition: all 0.2s ease;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
     }
     /* Karanlık mod uyumu */
     body.dark-mode .table-striped > tbody > tr:nth-of-type(odd) {
@@ -331,6 +391,57 @@ if (file_exists(PROBLEM_LOG_FILE)) {
       cursor: pointer;
     }
     #floatingDarkToggle:hover { background: #0d6efd; color: #fff; border-color: #fff; }
+    
+    /* Arıza seçimi için özel stiller */
+    #assignTrackingSelect option {
+      padding: 8px;
+      border-bottom: 1px solid #eee;
+    }
+    #assignTrackingSelect option:checked {
+      background: linear-gradient(135deg, #0d6efd, #0b5ed7);
+      color: white;
+    }
+    #selectedFaultInfo {
+      margin-top: 5px;
+      padding: 8px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      border-left: 3px solid #0d6efd;
+    }
+    body.dark-mode #selectedFaultInfo {
+      background: #2d3748;
+      color: #e2e8f0;
+      border-left-color: #4299e1;
+    }
+    .assign-row { gap: 0.5rem; }
+    @media (min-width: 768px) {
+      .assign-row { flex-wrap: nowrap !important; }
+      .assign-row > div { margin-bottom: 0 !important; }
+    }
+    .card-body.assign-tech-body {
+      padding: 1.2rem 1.2rem 0.7rem 1.2rem;
+    }
+    @media (max-width: 991.98px) {
+      .card-body.assign-tech-body {
+        min-width: 100% !important;
+        max-width: 100% !important;
+      }
+    }
+    #selectedFaultInfo {
+      margin-top: 4px;
+      padding: 8px 12px;
+      background: #232a3a;
+      color: #e2e8f0;
+      border-radius: 6px;
+      border-left: 3px solid #0d6efd;
+      font-size: 0.97em;
+      min-height: 28px;
+    }
+    body:not(.dark-mode) #selectedFaultInfo {
+      background: #f8f9fa;
+      color: #222;
+      border-left-color: #0d6efd;
+    }
     </style>
 </head>
 <body class="bg-light">
@@ -357,8 +468,7 @@ if (file_exists(PROBLEM_LOG_FILE)) {
 <div class="container mb-4">
   <div class="row align-items-center mb-3">
     <div class="col-md-8">
-      <h2 class="mb-0">Admin Paneli</h2>
-      <div class="text-muted small">Yönetici: <b><?= htmlspecialchars($currentUser['username']) ?></b></div>
+      <h2 class="mb-0"><i class="bi bi-gear-fill text-primary"></i> Admin Paneli</h2>
     </div>
     <div class="col-md-4 text-md-end mt-2 mt-md-0">
       <ul class="nav nav-tabs justify-content-end" style="border-bottom: 2px solid #e3f0fa;">
@@ -378,17 +488,26 @@ if (file_exists(PROBLEM_LOG_FILE)) {
 </div>
 <?php endif; ?>
 <div class="container">
-    <h1 class="mb-4">Admin Paneli - Arıza Listesi</h1>
-    <form method="get" class="mb-3">
-        <label class="form-label">Duruma Göre Filtrele:
-            <select name="filter" class="form-select d-inline w-auto" onchange="this.form.submit()">
-                <option value="" <?= $filter === '' ? 'selected' : '' ?>>Tümü</option>
-<?php foreach ($faultStatuses as $key => $label): ?>
-    <option value="<?= $key ?>" <?= $filter === $key ? 'selected' : '' ?>><?= $label ?></option>
-<?php endforeach; ?>
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <form method="get" class="d-flex align-items-center gap-2">
+                <label class="form-label mb-0 fw-bold">
+                    <i class="bi bi-funnel"></i> Duruma Göre Filtrele:
+                </label>
+                <select name="filter" class="form-select w-auto" onchange="this.form.submit()">
+                    <option value="" <?= $filter === '' ? 'selected' : '' ?>>Tümü</option>
+    <?php foreach ($faultStatuses as $key => $label): ?>
+        <option value="<?= $key ?>" <?= $filter === $key ? 'selected' : '' ?>><?= $label ?></option>
+    <?php endforeach; ?>
                 </select>
-        </label>
-    </form>
+            </form>
+        </div>
+        <div class="col-md-6 text-md-end">
+            <span class="badge bg-primary fs-6">
+                <i class="bi bi-list-ul"></i> Toplam: <?= count($problems) ?> Arıza
+            </span>
+        </div>
+    </div>
     <?php if ($updateMsg): ?>
         <div class="alert alert-success"> <?= htmlspecialchars($updateMsg) ?> </div>
     <?php endif; ?>
@@ -442,84 +561,167 @@ if (file_exists(PROBLEM_LOG_FILE)) {
 </tbody>
 </table>
 <?php endif; ?>
-    <h2 class="mt-4">Arıza Teknisyen Atama</h2>
-    <form method="post" class="mb-4">
-        <div class="row g-2 align-items-end">
-            <div class="col-md-4">
-                <label class="form-label">Arıza Takip No</label>
-                <input type="text" name="assign_tracking" class="form-control" required>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">Teknisyen</label>
-                <select name="assign_personnel" class="form-select" required>
-                    <?php foreach ($teknisyenler as $t): ?>
-                        <option value="<?= htmlspecialchars($t['username']) ?>">
-                            <?= htmlspecialchars($t['username']) ?><?php if (!empty($t['profession'])): ?> (<?= htmlspecialchars($t['profession']) ?>)<?php endif; ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <button type="submit" name="assign_tech" class="btn btn-success">Ata</button>
-            </div>
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                <i class="bi bi-person-plus"></i> Arıza Teknisyen Atama
+                <span class="badge bg-light text-primary ms-2">
+                    <?= count(array_filter($problems, function($p) { return empty($p['assignedTo'] ?? $p['assigned'] ?? ''); })) ?> Atanmamış
+                </span>
+            </h5>
         </div>
-    </form>
+        <div class="card-body assign-tech-body" style="padding: 1.2rem 1.2rem 0.7rem 1.2rem;">
+            <form method="post" class="w-100">
+                <div class="row g-3 align-items-center">
+                    <div class="col-12 col-md-4">
+                        <label class="form-label fw-bold mb-1"><i class="bi bi-hash"></i> Arıza Takip No</label>
+                        <select name="assign_tracking" class="form-select form-select-lg mb-0" required id="assignTrackingSelect">
+                            <option value="">Arıza seçin...</option>
+                            <?php 
+                            $unassignedProblems = array_filter($problems, function($p) {
+                                return empty($p['assignedTo'] ?? $p['assigned'] ?? '');
+                            });
+                            if (empty($unassignedProblems)): ?>
+                                <option value="" disabled>Tüm arızalar atanmış</option>
+                            <?php else: ?>
+                                <?php foreach ($unassignedProblems as $p): ?>
+                                    <option value="<?= htmlspecialchars($p['trackingNo']) ?>" 
+                                            data-department="<?= htmlspecialchars($p['department']) ?>"
+                                            data-type="<?= htmlspecialchars($p['faultType']) ?>"
+                                            data-date="<?= htmlspecialchars($p['date']) ?>">
+                                        <?= htmlspecialchars($p['trackingNo']) ?> - <?= htmlspecialchars($p['title'] ?? $p['faultType']) ?> (<?= htmlspecialchars($p['department']) ?>)
+                                    </option>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </select>
+                        <div class="w-100 d-block">
+                            <small class="form-text" id="selectedFaultInfo"></small>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-5">
+                        <label class="form-label fw-bold mb-1"><i class="bi bi-person-workspace"></i> Teknisyen</label>
+                        <select name="assign_personnel" class="form-select form-select-lg mb-0" required>
+                            <option value="">Teknisyen seçin...</option>
+                            <?php foreach ($teknisyenler as $t): ?>
+                                <option value="<?= htmlspecialchars($t['username']) ?>">
+                                    <?= htmlspecialchars($t['username']) ?><?php if (!empty($t['profession'])): ?> (<?= htmlspecialchars($t['profession']) ?>)<?php endif; ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-3 d-grid">
+                        <button type="submit" name="assign_tech" class="btn btn-success btn-lg h-100 w-100 mt-0">
+                            <i class="bi bi-check-circle"></i> Ata
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
     <div class="table-responsive">
-    <table class="table table-bordered table-striped align-middle detail-table">
+    <table class="table table-bordered table-striped table-hover align-middle detail-table shadow-sm">
         <thead class="table-primary">
         <tr>
-            <th>Takip No</th>
-            <th>Tür</th>
-            <th>Başlık</th>
-            <th>Birim</th>
-            <th>Bilgisayar Özellikleri</th>
-            <th>İletişim</th>
-            <th>Tarih</th>
-            <th>Durum</th>
-            <th>Teknisyen</th>
-            <th>Güncelle</th>
+            <th class="text-center"><i class="bi bi-hash"></i> Takip No</th>
+            <th class="text-center"><i class="bi bi-tag"></i> Tür</th>
+            <th><i class="bi bi-card-heading"></i> Başlık</th>
+            <th><i class="bi bi-building"></i> Birim</th>
+            <th><i class="bi bi-cpu"></i> Bilgisayar Özellikleri</th>
+            <th><i class="bi bi-telephone"></i> İletişim</th>
+            <th class="text-center"><i class="bi bi-calendar"></i> Tarih</th>
+            <th class="text-center"><i class="bi bi-flag"></i> Durum</th>
+            <th><i class="bi bi-person-workspace"></i> Teknisyen</th>
+            <th class="text-center"><i class="bi bi-pencil-square"></i> İşlemler</th>
             <?php if ($currentUser && $currentUser['role'] === 'MainAdmin'): ?>
-                <th>Sil</th>
+                <th class="text-center"><i class="bi bi-trash"></i> Sil</th>
             <?php endif; ?>
         </tr>
         </thead>
         <tbody>
         <?php foreach ($problems as $p): ?>
             <tr>
-                <td><?= htmlspecialchars($p['trackingNo']) ?></td>
-                <td><?= htmlspecialchars($p['faultType']) ?></td>
-                <td><?= htmlspecialchars($p['title'] ?? '-') ?></td>
-                <td><?= htmlspecialchars($p['department']) ?></td>
-                <td><?= htmlspecialchars($p['specs'] ?? '-') ?></td>
-                <td><?= htmlspecialchars($p['contact'] ?? '-') ?></td>
-                <td><?= htmlspecialchars($p['date']) ?></td>
-                <td><?= htmlspecialchars($p['status']) ?></td>
-                <td><?= htmlspecialchars($p['assignedTo'] ?? ($p['assigned'] ?? '')) ?></td>
-                <td><?= htmlspecialchars(isset($p['description']) ? $p['description'] : '') ?></td>
+                <td class="text-center fw-bold text-primary"><?= htmlspecialchars($p['trackingNo']) ?></td>
+                <td class="text-center"><span class="badge bg-secondary"><?= htmlspecialchars($p['faultType']) ?></span></td>
+                <td><strong><?= htmlspecialchars($p['title'] ?? '-') ?></strong></td>
+                <td><i class="bi bi-building text-muted"></i> <?= htmlspecialchars($p['department']) ?></td>
+                <td><small class="text-muted"><?= htmlspecialchars($p['specs'] ?? '-') ?></small></td>
+                <td><i class="bi bi-telephone text-muted"></i> <?= htmlspecialchars($p['contact'] ?? '-') ?></td>
+                <td class="text-center"><small><?= htmlspecialchars($p['date']) ?></small></td>
+                <td class="text-center">
+                    <?php 
+                    $statusClass = '';
+                    $statusIcon = '';
+                    switch($p['status']) {
+                        case 'Bekliyor':
+                            $statusClass = 'bg-warning text-dark';
+                            $statusIcon = 'bi-clock';
+                            break;
+                        case 'Onaylandı':
+                            $statusClass = 'bg-info text-white';
+                            $statusIcon = 'bi-check-circle';
+                            break;
+                        case 'Tamamlandı':
+                            $statusClass = 'bg-success text-white';
+                            $statusIcon = 'bi-check2-all';
+                            break;
+                        default:
+                            $statusClass = 'bg-secondary text-white';
+                            $statusIcon = 'bi-question-circle';
+                    }
+                    ?>
+                    <span class="badge <?= $statusClass ?>">
+                        <i class="bi <?= $statusIcon ?>"></i> <?= htmlspecialchars($p['status']) ?>
+                    </span>
+                </td>
                 <td>
-                    <button type="button" class="btn btn-primary btn-sm"
-                        onclick="openUpdatePopup(
-                            '<?= htmlspecialchars($p['trackingNo']) ?>',
-                            '<?= htmlspecialchars($p['status']) ?>',
-                            '<?= htmlspecialchars($p['assignedTo'] ?? ($p['assigned'] ?? '')) ?>',
-                            this.dataset.description
-                        )"
-                        data-description="<?= htmlspecialchars(isset($p['description']) ? $p['description'] : '', ENT_QUOTES) ?>"
-                    >Güncelle</button>
+                    <?php 
+                    $assignedTech = '';
+                    if (isset($p['assignedTo']) && !empty($p['assignedTo'])) {
+                        $assignedTech = $p['assignedTo'];
+                    } elseif (isset($p['assigned']) && !empty($p['assigned'])) {
+                        $assignedTech = $p['assigned'];
+                    }
+                    
+                    if (!empty($assignedTech)): ?>
+                        <span class="badge bg-primary">
+                            <i class="bi bi-person-workspace"></i> <?= htmlspecialchars($assignedTech) ?>
+                        </span>
+                    <?php else: ?>
+                        <span class="text-muted"><small>Atanmamış</small></span>
+                    <?php endif; ?>
+                </td>
+                <td class="text-center">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-primary btn-sm"
+                            onclick="openUpdatePopup(
+                                '<?= htmlspecialchars($p['trackingNo']) ?>',
+                                '<?= htmlspecialchars($p['status']) ?>',
+                                '<?= htmlspecialchars($assignedTech) ?>',
+                                this.dataset.description
+                            )"
+                            data-description="<?= htmlspecialchars(isset($p['description']) ? $p['description'] : '', ENT_QUOTES) ?>"
+                            title="Güncelle"
+                        >
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-info btn-sm detail-btn" 
+                            onclick="openDetailCardbox('<?= htmlspecialchars($p['trackingNo']) ?>', this, event)"
+                            title="Detaylı İncele"
+                        >
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
                 </td>
                 <?php if ($currentUser && $currentUser['role'] === 'MainAdmin'): ?>
-                <td>
+                <td class="text-center">
                     <form method="post" onsubmit="return confirm('Bu arızayı silmek istediğinize emin misiniz?');" style="display:inline-block">
                         <input type="hidden" name="delete_trackingNo" value="<?= htmlspecialchars($p['trackingNo']) ?>">
-                        <button type="submit" name="delete_fault" class="btn btn-danger btn-sm">Sil</button>
+                        <button type="submit" name="delete_fault" class="btn btn-danger btn-sm" title="Sil">
+                            <i class="bi bi-trash"></i>
+                        </button>
                     </form>
                 </td>
                 <?php endif; ?>
-                <td>
-                    <button type="button" class="btn btn-outline-info btn-sm detail-btn" onclick="openDetailCardbox('<?= htmlspecialchars($p['trackingNo']) ?>', this)">
-                        <i class="bi bi-search"></i> Detaylı İncele
-                    </button>
-                </td>
             </tr>
         <?php endforeach; ?>
         </tbody>
@@ -628,53 +830,17 @@ if (file_exists(PROBLEM_LOG_FILE)) {
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-function showAssignForm(trackingNo) {
-    document.getElementById('assignForm-' + trackingNo).classList.remove('d-none');
+function clearNotifs() {
+  document.querySelector('#notifModal .list-group').innerHTML = '<li class="list-group-item text-muted">Tüm bildirimler temizlendi.</li>';
 }
-function hideAssignForm(trackingNo) {
-    document.getElementById('assignForm-' + trackingNo).classList.add('d-none');
+const feedbackForm = document.getElementById('feedbackForm');
+if (feedbackForm) {
+  feedbackForm.onsubmit = function(e) {
+    e.preventDefault();
+    document.getElementById('feedbackMsg').innerHTML = '<span class="text-success">Teşekkürler, geri bildiriminiz alındı.</span>';
+    feedbackForm.reset();
+  };
 }
-// Arıza detay modalı için arıza verisini JS'ye aktar
-const problemsData = <?php echo json_encode($problems, JSON_UNESCAPED_UNICODE); ?>;
-let openCardbox = null;
-function openDetailCardbox(trackingNo, btn) {
-    if (openCardbox) openCardbox.remove();
-    const p = problemsData.find(x => x.trackingNo === trackingNo);
-    if (!p) return;
-    let html = `<button class='close-btn' onclick='this.parentElement.remove(); openCardbox=null;'>&times;</button>`;
-    html += `<div class='mb-2'><b>Takip No:</b> ${p.trackingNo}</div>`;
-    html += `<div class='mb-2'><b>Detaylı Tanım:</b><br><span>${p.detailedDescription ?? '-'}</span></div>`;
-    if (p.filePath && p.filePath !== '') {
-        const fileName = p.filePath.split('/').pop();
-        const ext = fileName.split('.').pop().toLowerCase();
-        if (["jpg","jpeg","png","gif","bmp","webp"].includes(ext)) {
-            html += `<div class='mb-2'><img src='uploads/${fileName}' alt='Ekli Görsel' style='max-width:100%;max-height:180px;border-radius:8px;'></div>`;
-        } else {
-            html += `<div class='mb-2'><a href='uploads/${fileName}' target='_blank' class='btn btn-outline-primary btn-sm'><i class='bi bi-file-earmark-arrow-down'></i> Dosyayı Görüntüle/İndir</a></div>`;
-        }
-    } else {
-        html += `<div class='mb-2 text-muted'>Dosya eklenmemiş.</div>`;
-    }
-    html += `<div class='mb-2'><b>Birim:</b> ${p.department ?? '-'}</div>`;
-    html += `<div class='mb-2'><b>Arıza Türü:</b> ${p.faultType ?? '-'}</div>`;
-    html += `<div class='mb-2'><b>Durum:</b> ${p.status ?? '-'}</div>`;
-    html += `<div class='mb-2'><b>Tarih:</b> ${p.date ?? '-'}</div>`;
-    const card = document.createElement('div');
-    card.className = 'detail-cardbox';
-    card.innerHTML = html;
-    document.body.appendChild(card);
-    const rect = btn.getBoundingClientRect();
-    card.style.top = (window.scrollY + rect.bottom + 4) + 'px';
-    card.style.left = (window.scrollX + rect.left) + 'px';
-    card.style.display = 'block';
-    openCardbox = card;
-}
-document.addEventListener('click', function(e) {
-    if (openCardbox && !openCardbox.contains(e.target) && !e.target.classList.contains('detail-btn')) {
-        openCardbox.remove();
-        openCardbox = null;
-    }
-});
 </script>
 <div id="floatingDarkToggle" title="Karanlık Mod" aria-label="Karanlık Mod" style="display:none;"><i class="bi bi-moon"></i></div>
 <script>
@@ -714,6 +880,53 @@ document.addEventListener('DOMContentLoaded', function() {
     floatToggle.style.display = 'flex';
   }
 });
+</script>
+<script>
+// PHP'den JS'ye arıza verilerini dizi (array) olarak aktar
+const problemsData = <?php echo json_encode($problems, JSON_UNESCAPED_UNICODE); ?>;
+let openCardbox = null;
+function openDetailCardbox(trackingNo, btn, event) {
+    if (event) event.stopPropagation();
+    if (openCardbox) openCardbox.remove();
+    const p = problemsData.find(x => x.trackingNo === trackingNo);
+    if (!p) return;
+    let html = `<button class='close-btn' onclick='this.parentElement.remove(); openCardbox=null;'>×</button>`;
+    html += `<div class='mb-2'><b>Takip No:</b> ${p.trackingNo}</div>`;
+    html += `<div class='mb-2'><b>Detaylı Tanım:</b><br><span>${p.detailedDescription ?? '-'}</span></div>`;
+    if (p.filePath && p.filePath !== '') {
+        const fileName = p.filePath.split('/').pop();
+        const ext = fileName.split('.').pop().toLowerCase();
+        if (["jpg","jpeg","png","gif","bmp","webp"].includes(ext)) {
+            html += `<div class='mb-2'><img src='uploads/${fileName}' alt='Ekli Görsel' style='max-width:100%;max-height:180px;border-radius:8px;'></div>`;
+        } else {
+            html += `<div class='mb-2'><a href='uploads/${fileName}' target='_blank' class='btn btn-outline-primary btn-sm'><i class='bi bi-file-earmark-arrow-down'></i> Dosyayı Görüntüle/İndir</a></div>`;
+        }
+    } else {
+        html += `<div class='mb-2 text-muted'>Dosya eklenmemiş.</div>`;
+    }
+    html += `<div class='mb-2'><b>Birim:</b> ${p.department ?? '-'}</div>`;
+    html += `<div class='mb-2'><b>Arıza Türü:</b> ${p.faultType ?? '-'}</div>`;
+    html += `<div class='mb-2'><b>Durum:</b> ${p.status ?? '-'}</div>`;
+    html += `<div class='mb-2'><b>Tarih:</b> ${p.date ?? '-'}</div>`;
+    const card = document.createElement('div');
+    card.className = 'detail-cardbox';
+    card.innerHTML = html;
+    card.onclick = function(e) { e.stopPropagation(); };
+    document.body.appendChild(card);
+    const rect = btn.getBoundingClientRect();
+    card.style.top = (window.scrollY + rect.bottom + 4) + 'px';
+    card.style.left = (window.scrollX + rect.left) + 'px';
+    card.style.display = 'block';
+    openCardbox = card;
+}
+setTimeout(() => {
+  document.addEventListener('click', function(e) {
+      if (openCardbox && !openCardbox.contains(e.target) && !e.target.classList.contains('detail-btn')) {
+          openCardbox.remove();
+          openCardbox = null;
+      }
+  });
+}, 0);
 </script>
 </body>
 </html> 

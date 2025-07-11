@@ -149,7 +149,10 @@ if (file_exists($logFile)) {
     </div>
     <div class="card shadow-sm mb-4">
       <div class="card-body">
-        <h4 class="mb-3"><i class="bi bi-list-task"></i> Atanan İşlerim</h4>
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-3 gap-2">
+          <h4 class="mb-0"><i class="bi bi-list-task text-primary"></i> Atanan İşlerim</h4>
+          <input type="text" id="tableSearch" class="form-control w-auto" style="max-width:260px;" placeholder="Tabloda ara...">
+        </div>
         <?php if ($successMsg): ?>
 <div class="toast-container position-fixed top-0 end-0 p-3">
   <div class="toast align-items-center text-bg-success border-0 show" role="alert" aria-live="assertive" aria-atomic="true">
@@ -174,31 +177,63 @@ if (file_exists($logFile)) {
   </div>
 </div>
 <?php endif; ?>
-        <div class="mb-3">
-          <input type="text" id="tableSearch" class="form-control" placeholder="Tabloda ara...">
-        </div>
         <div class="table-responsive">
-        <table class="table table-bordered table-striped align-middle detail-table" id="assignedTable">
+        <table class="table table-bordered table-striped table-hover align-middle detail-table shadow-sm" id="assignedTable">
             <thead class="table-primary">
-            <tr><th>Takip No</th><th>Açıklama</th><th>Durum</th><th>Tarih</th><th>İletişim</th><th>Güncelle</th></tr>
+            <tr>
+              <th class="text-center"><i class="bi bi-hash"></i> Takip No</th>
+              <th><i class="bi bi-card-heading"></i> Açıklama</th>
+              <th class="text-center"><i class="bi bi-flag"></i> Durum</th>
+              <th class="text-center"><i class="bi bi-calendar"></i> Tarih</th>
+              <th class="text-center"><i class="bi bi-telephone"></i> İletişim</th>
+              <th class="text-center"><i class="bi bi-pencil-square"></i> İşlemler</th>
+            </tr>
             </thead>
             <tbody>
             <?php foreach ($problems as $entry): ?>
 <tr>
-    <td><?= htmlspecialchars($entry['trackingNo'] ?? '') ?></td>
-    <td><?php if (!empty($entry['description'])): ?><span style="cursor:pointer; color:#0d6efd;" data-bs-toggle="tooltip" data-bs-title="<?= htmlspecialchars($entry['description']) ?>"><i class="bi bi-info-circle"></i></span><?php endif; ?></td>
+    <td class="text-center fw-bold text-primary"><?= htmlspecialchars($entry['trackingNo'] ?? '') ?></td>
+    <td>
+      <?php if (!empty($entry['description'])): ?>
+        <span style="cursor:pointer; color:#0d6efd;" data-bs-toggle="tooltip" data-bs-title="<?= htmlspecialchars($entry['description']) ?>">
+          <i class="bi bi-info-circle"></i>
+        </span>
+      <?php endif; ?>
+    </td>
     <?php $status = $entry['status'] ?? '-';
-    $badge = 'secondary';
-    if ($status === 'Bekliyor') $badge = 'warning';
-    elseif ($status === 'Onaylandı') $badge = 'info';
-    elseif ($status === 'Tamamlandı') $badge = 'success'; ?>
-    <td><span class="badge bg-<?= $badge ?>"><?= htmlspecialchars($status) ?></span></td>
-    <td><?= htmlspecialchars($entry['date'] ?? '-') ?></td>
-    <td><?php if (!empty($entry['contact'])): ?><span style="cursor:pointer; color:#0d6efd;" data-bs-toggle="tooltip" data-bs-title="<?= htmlspecialchars($entry['contact']) ?>"><i class="bi bi-telephone"></i></span><?php endif; ?></td>
-    <td><button type="button" class="btn btn-primary btn-sm" onclick="openUpdatePopup('<?= htmlspecialchars($entry['trackingNo']) ?>','<?= htmlspecialchars($entry['status']) ?>')"><i class="bi bi-pencil-square"></i> Güncelle</button></td>
-    <td><button type="button" class="btn btn-outline-info btn-sm detail-btn" onclick="openDetailCardbox('<?= htmlspecialchars($entry['trackingNo']) ?>', this)"><i class="bi bi-search"></i> Detaylı İncele</button></td>
+    $badge = 'secondary'; $statusIcon = 'bi-question-circle';
+    if ($status === 'Bekliyor') { $badge = 'warning'; $statusIcon = 'bi-clock'; }
+    elseif ($status === 'Onaylandı') { $badge = 'info'; $statusIcon = 'bi-check-circle'; }
+    elseif ($status === 'Tamamlandı') { $badge = 'success'; $statusIcon = 'bi-check2-all'; } ?>
+    <td class="text-center">
+      <span class="badge bg-<?= $badge ?>">
+        <i class="bi <?= $statusIcon ?>"></i> <?= htmlspecialchars($status) ?>
+      </span>
+    </td>
+    <td class="text-center"><small><?= htmlspecialchars($entry['date'] ?? '-') ?></small></td>
+    <td class="text-center">
+      <?php if (!empty($entry['contact'])): ?>
+        <span style="cursor:pointer; color:#0d6efd;" data-bs-toggle="tooltip" data-bs-title="<?= htmlspecialchars($entry['contact']) ?>">
+          <i class="bi bi-telephone"></i>
+        </span>
+      <?php endif; ?>
+    </td>
+    <td class="text-center">
+      <div class="btn-group" role="group">
+        <button type="button" class="btn btn-primary btn-sm"
+          onclick="openUpdatePopup('<?= htmlspecialchars($entry['trackingNo']) ?>','<?= htmlspecialchars($entry['status']) ?>')"
+          title="Güncelle">
+          <i class="bi bi-pencil"></i>
+        </button>
+        <button type="button" class="btn btn-outline-info btn-sm detail-btn"
+          onclick="openDetailCardbox('<?= htmlspecialchars($entry['trackingNo']) ?>', this, event)"
+          title="Detaylı İncele">
+          <i class="bi bi-search"></i>
+        </button>
+      </div>
+    </td>
 </tr>
-<?php endforeach; ?>
+            <?php endforeach; ?>
             </tbody>
         </table>
         </div>
@@ -284,6 +319,54 @@ if (file_exists($logFile)) {
     </div>
 <?php endif; ?>
 </div>
+<!-- Bildirim Merkezi Modal -->
+<div class="modal fade" id="notifModal" tabindex="-1" aria-labelledby="notifModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-end">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="notifModalLabel"><i class="bi bi-bell"></i> Bildirim Merkezi</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Kapat"></button>
+      </div>
+      <div class="modal-body">
+        <ul class="list-group">
+          <li class="list-group-item"><i class="bi bi-info-circle text-primary"></i> Yeni bir arıza size atandı.</li>
+          <li class="list-group-item"><i class="bi bi-check-circle text-success"></i> Bir arıza tamamlandı.</li>
+          <li class="list-group-item"><i class="bi bi-chat-dots text-info"></i> Yeni mesajınız var.</li>
+        </ul>
+        <div class="text-end mt-2"><button class="btn btn-sm btn-outline-secondary" onclick="clearNotifs()">Tümünü Temizle</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Yardım/SSS Modal -->
+<div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="helpModalLabel"><i class="bi bi-question-circle"></i> Yardım & SSS</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Kapat"></button>
+      </div>
+      <div class="modal-body">
+        <h6>Sıkça Sorulan Sorular</h6>
+        <ul>
+          <li><b>Takip numaramı kaybettim, ne yapmalıyım?</b><br>İletişim bilgilerinizle birlikte destek ekibine başvurun.</li>
+          <li><b>Arıza durumunu nasıl takip ederim?</b><br>"Takip" sekmesinden takip numaranızla sorgulayabilirsiniz.</li>
+          <li><b>Şifremi unuttum, nasıl sıfırlarım?</b><br>Giriş ekranındaki "Şifremi unuttum" bağlantısını kullanın.</li>
+        </ul>
+        <hr>
+        <h6>Geri Bildirim</h6>
+        <form id="feedbackForm">
+          <div class="mb-2">
+            <label class="form-label">Görüşünüz</label>
+            <textarea class="form-control" name="feedback" rows="2" required></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm">Gönder</button>
+        </form>
+        <div id="feedbackMsg" class="mt-2"></div>
+      </div>
+    </div>
+  </div>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 <!-- Açıklama popup -->
@@ -344,101 +427,15 @@ function closeUpdatePopup(e) {
 }
 </script>
 <script>
-// Karanlık mod toggle
-const darkToggle = document.getElementById('darkModeToggle');
-function setDarkMode(on) {
-  if (on) {
-    document.body.classList.add('dark-mode');
-    darkToggle.innerHTML = '<i class="bi bi-brightness-high"></i>';
-    localStorage.setItem('darkMode', '1');
-  } else {
-    document.body.classList.remove('dark-mode');
-    darkToggle.innerHTML = '<i class="bi bi-moon"></i>';
-    localStorage.setItem('darkMode', '0');
-  }
-}
-darkToggle.onclick = () => setDarkMode(!document.body.classList.contains('dark-mode'));
-if (localStorage.getItem('darkMode') === '1') setDarkMode(true);
-// Bildirim ve yardım butonları (modal açma placeholder)
-document.getElementById('helpBtn').onclick = function() {
-  alert('Yardım ve SSS yakında burada!');
-};
-document.getElementById('notifBtn').onclick = function() {
-  alert('Bildirim merkezi yakında burada!');
-};
-</script>
-<!-- Bildirim Merkezi Modal -->
-<div class="modal fade" id="notifModal" tabindex="-1" aria-labelledby="notifModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-end">
-    <div class="modal-content">
-      <div class="modal-header bg-primary text-white">
-        <h5 class="modal-title" id="notifModalLabel"><i class="bi bi-bell"></i> Bildirim Merkezi</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Kapat"></button>
-      </div>
-      <div class="modal-body">
-        <ul class="list-group">
-          <li class="list-group-item"><i class="bi bi-info-circle text-primary"></i> Yeni bir arıza size atandı.</li>
-          <li class="list-group-item"><i class="bi bi-check-circle text-success"></i> Bir arıza tamamlandı.</li>
-          <li class="list-group-item"><i class="bi bi-chat-dots text-info"></i> Yeni mesajınız var.</li>
-        </ul>
-        <div class="text-end mt-2"><button class="btn btn-sm btn-outline-secondary" onclick="clearNotifs()">Tümünü Temizle</button></div>
-      </div>
-    </div>
-  </div>
-</div>
-<!-- Yardım/SSS Modal -->
-<div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header bg-primary text-white">
-        <h5 class="modal-title" id="helpModalLabel"><i class="bi bi-question-circle"></i> Yardım & SSS</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Kapat"></button>
-      </div>
-      <div class="modal-body">
-        <h6>Sıkça Sorulan Sorular</h6>
-        <ul>
-          <li><b>Takip numaramı kaybettim, ne yapmalıyım?</b><br>İletişim bilgilerinizle birlikte destek ekibine başvurun.</li>
-          <li><b>Arıza durumunu nasıl takip ederim?</b><br>"Takip" sekmesinden takip numaranızla sorgulayabilirsiniz.</li>
-          <li><b>Şifremi unuttum, nasıl sıfırlarım?</b><br>Giriş ekranındaki "Şifremi unuttum" bağlantısını kullanın.</li>
-        </ul>
-        <hr>
-        <h6>Geri Bildirim</h6>
-        <form id="feedbackForm">
-          <div class="mb-2">
-            <label class="form-label">Görüşünüz</label>
-            <textarea class="form-control" name="feedback" rows="2" required></textarea>
-          </div>
-          <button type="submit" class="btn btn-primary btn-sm">Gönder</button>
-        </form>
-        <div id="feedbackMsg" class="mt-2"></div>
-      </div>
-    </div>
-  </div>
-</div>
-<script>
-// Bildirimleri temizle (örnek)
-function clearNotifs() {
-  document.querySelector('#notifModal .list-group').innerHTML = '<li class="list-group-item text-muted">Tüm bildirimler temizlendi.</li>';
-  document.getElementById('notifDot').classList.add('d-none');
-}
-// Geri bildirim formu
-const feedbackForm = document.getElementById('feedbackForm');
-if (feedbackForm) {
-  feedbackForm.onsubmit = function(e) {
-    e.preventDefault();
-    document.getElementById('feedbackMsg').innerHTML = '<span class="text-success">Teşekkürler, geri bildiriminiz alındı.</span>';
-    feedbackForm.reset();
-  };
-}
-</script>
-<script>
+// PHP'den JS'ye arıza verilerini dizi (array) olarak aktar
 const problemsData = <?php echo json_encode($problems, JSON_UNESCAPED_UNICODE); ?>;
 let openCardbox = null;
-function openDetailCardbox(trackingNo, btn) {
+function openDetailCardbox(trackingNo, btn, event) {
+    if (event) event.stopPropagation();
     if (openCardbox) openCardbox.remove();
     const p = problemsData.find(x => x.trackingNo === trackingNo);
     if (!p) return;
-    let html = `<button class='close-btn' onclick='this.parentElement.remove(); openCardbox=null;'>&times;</button>`;
+    let html = `<button class='close-btn' onclick='this.parentElement.remove(); openCardbox=null;'>×</button>`;
     html += `<div class='mb-2'><b>Takip No:</b> ${p.trackingNo}</div>`;
     html += `<div class='mb-2'><b>Detaylı Tanım:</b><br><span>${p.detailedDescription ?? '-'}</span></div>`;
     if (p.filePath && p.filePath !== '') {
@@ -459,6 +456,7 @@ function openDetailCardbox(trackingNo, btn) {
     const card = document.createElement('div');
     card.className = 'detail-cardbox';
     card.innerHTML = html;
+    card.onclick = function(e) { e.stopPropagation(); };
     document.body.appendChild(card);
     const rect = btn.getBoundingClientRect();
     card.style.top = (window.scrollY + rect.bottom + 4) + 'px';
@@ -466,12 +464,32 @@ function openDetailCardbox(trackingNo, btn) {
     card.style.display = 'block';
     openCardbox = card;
 }
-document.addEventListener('click', function(e) {
-    if (openCardbox && !openCardbox.contains(e.target) && !e.target.classList.contains('detail-btn')) {
-        openCardbox.remove();
-        openCardbox = null;
-    }
-});
+setTimeout(() => {
+  document.addEventListener('click', function(e) {
+      if (openCardbox && !openCardbox.contains(e.target) && !e.target.classList.contains('detail-btn')) {
+          openCardbox.remove();
+          openCardbox = null;
+      }
+  });
+}, 0);
+</script>
+<script>
+// Karanlık mod toggle
+const darkToggle = document.getElementById('darkModeToggle');
+function setDarkMode(on) {
+  if (on) {
+    document.body.classList.add('dark-mode');
+    darkToggle.innerHTML = '<i class="bi bi-brightness-high"></i>';
+    localStorage.setItem('darkMode', '1');
+  } else {
+    document.body.classList.remove('dark-mode');
+    darkToggle.innerHTML = '<i class="bi bi-moon"></i>';
+    localStorage.setItem('darkMode', '0');
+  }
+}
+darkToggle.onclick = () => setDarkMode(!document.body.classList.contains('dark-mode'));
+if (localStorage.getItem('darkMode') === '1') setDarkMode(true);
+// Bildirim ve yardım butonları (modal açma placeholder)
 </script>
 <!-- Detay Modalı -->
 <div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
