@@ -3,6 +3,7 @@ session_start();
 require_once 'config.php';
 require_once 'log_error.php';
 
+
 // DEBUG: SSL and reCAPTCHA status
 // if (php_sapi_name() !== 'cli') {
 //     echo '<div style="background:#222;color:#fff;padding:10px;font-size:14px;">';
@@ -45,6 +46,14 @@ require_once 'log_error.php';
 //     echo '</div>';
 // }
 
+// Ortak arıza durumları
+$faultStatuses = [
+    'Bekliyor' => 'Bekliyor',
+    'Onaylandı' => 'Onaylandı',
+    'Tamamlandı' => 'Tamamlandı'
+];
+
+
 // Birimler (görselden alınan örnekler)
 $departments = [
     "Diş Hekimliği Fakültesi", "Eczacılık Fakültesi", "Edebiyat Fakültesi", "Eğitim Fakültesi", "Fen Fakültesi", "Güzel Sanatlar Fakültesi", "Hemşirelik Fakültesi", "Hukuk Fakültesi", "İktisadi ve İdari Bilimler Fakültesi", "İlahiyat Fakültesi", "İletişim Fakültesi", "Kemer Denizcilik Fakültesi", "Kumluca Sağlık Bilimleri Fakültesi", "Hukuk Müşavirliği", "Ziraat Fakültesi", "Adalet Meslek Yüksekokulu", "Alanya Meslek Yüksekokulu", "Demre Dr. Hasan Ünal Meslek Yüksekokulu", "Elmalı Meslek Yüksekokulu", "Finike Meslek Yüksekokulu", "Gastronomi ve Mutfak Sanatları Meslek Yüksekokulu", "Korkuteli Meslek Yüksekokulu", "Kumluca Meslek Yüksekokulu", "Manavgat Meslek Yüksekokulu", "Serik Meslek Yüksekokulu", "Sosyal Bilimler Meslek Yüksekokulu", "Teknik Bilimler Meslek Yüksekokulu", "Turizm İşletmeciliği ve Otelcilik Yüksekokulu", "Antalya Devlet Konservatuvarı", "Yabancı Diller Yüksekokulu", "Akdeniz Uygarlıkları Araştırma Enstitüsü", "Eğitim Bilimleri Enstitüsü", "Fen Bilimleri Enstitüsü", "Güzel Sanatlar Enstitüsü", "Prof.Dr.Tuncer Karpuzoğlu Organ Nakli Enstitüsü", "Sağlık Bilimleri Enstitüsü", "Sosyal Bilimler Enstitüsü", "Atatürk İlkeleri ve İnkılap Tarihi Bölüm Başkanlığı", "Beden Eğitimi ve Spor Bölüm Başkanlığı", "Enformatik Bölüm Başkanlığı", "Güzel Sanatlar Bölüm Başkanlığı", "Türk Dili Bölüm Başkanlığı", "Hukuk Müşavirliği", "Kütüphane ve Dokümantasyon Daire Başkanlığı", "Öğrenci İşleri Daire Başkanlığı", "Sağlık Kültür ve Spor Daire Başkanlığı", "Strateji Geliştirme Daire Başkanlığı", "Uluslararası İlişkiler Ofisi", "Yapı İşleri ve Teknik Daire Başkanlığı", "Basın Yayın ve Halkla İlişkiler Müdürlüğü", "Döner Sermaye İşletme Müdürlüğü", "Hastane", "İdari ve Mali İşler Daire Başkanlığı", "İnsan Kaynakları Daire Başkanlığı", "Kariyer Planlama ve Mezun İzleme Uygulama ve Araştırma Merkezi", "Kütüphane ve Dokümantasyon Daire Başkanlığı", "Öğrenci İşleri Daire Başkanlığı", "Sağlık Kültür ve Spor Daire Başkanlığı", "Strateji Geliştirme Daire Başkanlığı", "Teknoloji Transfer Ofisi", "TÖMER", "Yabancı Diller Yüksekokulu", "Diğer (liste dışı birim)"
@@ -86,12 +95,31 @@ $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
 $ip = $_SERVER['REMOTE_ADDR'] ?? '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
     // reCAPTCHA validation
     $recaptcha_secret = RECAPTCHA_SECRET_KEY;
     $recaptcha_response = $_POST['g-recaptcha-response'] ?? '';
     
     if (empty($recaptcha_response)) {
         $error = 'Lütfen "Ben robot değilim" kutucuğunu işaretleyin.';
+
+    $faultType = trim($_POST['faultType'] ?? '');
+    $subFaultType = trim($_POST['subFaultType'] ?? '');
+    $department = trim($_POST['department'] ?? '');
+    $contact = trim($_POST['contact'] ?? '');
+    $detailedDescription = trim($_POST['detailedDescription'] ?? '');
+    $date = date('Y-m-d H:i:s');
+    $status = $faultStatuses['Bekliyor'];
+    $trackingNo = strtoupper(substr(md5(uniqid(rand(), true)), 0, 8));
+    $filePath = '';
+    $missing = [];
+    if ($faultType === '') $missing[] = 'Arıza Türü';
+    if ($department === '') $missing[] = 'Birim';
+    if ($contact === '') $missing[] = 'İletişim Bilgisi';
+    if ($detailedDescription === '') $missing[] = 'Detaylı Tanımlama';
+    if ($missing) {
+        $error = 'Lütfen şu alanları doldurun: ' . implode(', ', $missing);
+
     } else {
         $recaptcha_url = 'https://www.google.com/recaptcha/api/siteverify';
         $recaptcha_data = [

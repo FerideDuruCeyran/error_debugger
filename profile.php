@@ -30,6 +30,12 @@ if (isset($_POST['change_password'])) {
         $errorMsg = 'Mevcut şifreniz yanlış.';
     }
 }
+// Ortak arıza durumları
+$faultStatuses = [
+    'Bekliyor' => 'Bekliyor',
+    'Onaylandı' => 'Onaylandı',
+    'Tamamlandı' => 'Tamamlandı'
+];
 ?>
 <!DOCTYPE html>
 <html lang="tr">
@@ -167,7 +173,7 @@ if (isset($_POST['change_password'])) {
                                 $entry = json_decode($line, true);
                                 if ($entry && isset($entry['assigned']) && $entry['assigned'] === $currentUser['username']) {
                                     $assigned++;
-                                    if (($entry['status'] ?? '') === 'Tamamlandı') $completed++;
+                                    if (($entry['status'] ?? '') === $faultStatuses['Tamamlandı']) $completed++;
                                 }
                             }
                         }
@@ -225,7 +231,7 @@ if (isset($_POST['change_password'])) {
                                 $entry = json_decode($line, true);
                                 if ($entry && isset($entry['assignedBy']) && $entry['assignedBy'] === $currentUser['username']) {
                                     $assigned++;
-                                    if (($entry['status'] ?? '') === 'Tamamlandı') $completed++;
+                                    if (($entry['status'] ?? '') === $faultStatuses['Tamamlandı']) $completed++;
                                     $rows .= '<tr>';
                                     $rows .= '<td>' . htmlspecialchars($entry['trackingNo'] ?? '') . '</td>';
                                     $rows .= '<td>' . htmlspecialchars($entry['description'] ?? '') . '</td>';
