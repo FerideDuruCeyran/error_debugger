@@ -28,6 +28,15 @@ if (isset($_POST['update_trackingNo'], $_POST['update_status'])) {
                 $entry['status'] = $newStatus;
                 $entry['assignedTo'] = $newTech;
                 $entry['message'] = $newMessage;
+                // Bildirim: Mesaj varsa, ilgili kişilere gönder
+                if (!empty($newMessage)) {
+                    if (!empty($entry['assignedTo'])) {
+                        addNotification($entry['assignedTo'], 'Takip No: ' . $trackingNo . ' için yeni mesaj: ' . $newMessage);
+                    }
+                    if (!empty($entry['username'])) {
+                        addNotification($entry['username'], 'Takip No: ' . $trackingNo . ' için yeni mesaj: ' . $newMessage);
+                    }
+                }
                 $lines[$i] = json_encode($entry, JSON_UNESCAPED_UNICODE);
                 break;
             }
@@ -846,9 +855,17 @@ function openUpdatePopup(trackingNo, status, technician, message) {
       </div>
       <div class="modal-body">
         <ul class="list-group">
-          <li class="list-group-item"><i class="bi bi-info-circle text-primary"></i> Yeni bir arıza size atandı.</li>
-          <li class="list-group-item"><i class="bi bi-check-circle text-success"></i> Bir arıza tamamlandı.</li>
-          <li class="list-group-item"><i class="bi bi-chat-dots text-info"></i> Yeni mesajınız var.</li>
+          <?php 
+          $notifFile = 'bildirimler/notifications_' . ($_SESSION['user'] ?? '') . '.json';
+          $notifs = file_exists($notifFile) ? json_decode(file_get_contents($notifFile), true) : [];
+          if (!empty($notifs)) {
+            foreach ($notifs as $n) {
+              echo '<li class="list-group-item">' . htmlspecialchars($n['msg']) . ' <span class="text-muted float-end" style="font-size:0.9em">' . htmlspecialchars($n['date']) . '</span></li>';
+            }
+          } else {
+            echo '<li class="list-group-item text-muted">Hiç bildiriminiz yok.</li>';
+          }
+          ?>
         </ul>
         <div class="text-end mt-2"><button class="btn btn-sm btn-outline-secondary" onclick="clearNotifs()">Tümünü Temizle</button></div>
       </div>

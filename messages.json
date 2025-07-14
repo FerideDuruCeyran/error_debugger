@@ -5,5 +5,33 @@
         "message": "selam main admin abi sorun var mı",
         "date": "2025-07-10 14:11:34",
         "read": true
+    },
+    {
+        "from": "mainadmin",
+        "to": "altadmin",
+        "message": "yok hayır",
+        "date": "2025-07-14 12:26:10",
+        "read": true
+    },
+    {
+        "from": "altadmin",
+        "to": "mainadmin",
+        "message": "merhaba",
+        "date": "2025-07-14 12:28:33",
+        "read": true
+    },
+    {
+        "from": "mainadmin",
+        "to": "altadmin",
+        "message": "hellooooo",
+        "date": "2025-07-14 12:30:38",
+        "read": true
+    },
+    {
+        "from": "altadmin",
+        "to": "mainadmin",
+        "message": "vSvjipm",
+        "date": "2025-07-14 12:32:23",
+        "read": false
     }
 ]
