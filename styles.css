@@ -165,3 +165,44 @@ body.dark-mode #selectedFaultInfo {
   color: #e2e8f0;
   border-left-color: #4299e1;
 } 
+
+/* Dark mode styles */
+body.dark {
+  background: #181a1b !important;
+  color: #e0e0e0 !important;
+}
+body.dark .table,
+body.dark .card,
+body.dark .modal-content,
+body.dark .navbar,
+body.dark .toast,
+body.dark .form-control,
+body.dark .form-select {
+  background: #23272b !important;
+  color: #e0e0e0 !important;
+  border-color: #444 !important;
+}
+body.dark .navbar {
+  background: #23272b !important;
+}
+body.dark .table th,
+body.dark .table td {
+  background: #23272b !important;
+  color: #e0e0e0 !important;
+}
+body.dark .btn,
+body.dark .btn-outline-light {
+  background: #23272b !important;
+  color: #e0e0e0 !important;
+  border-color: #444 !important;
+}
+body.dark .modal-content {
+  background: #23272b !important;
+  color: #e0e0e0 !important;
+}
+body.dark .form-control,
+body.dark .form-select {
+  background: #23272b !important;
+  color: #e0e0e0 !important;
+  border-color: #444 !important;
+} 

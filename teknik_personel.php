@@ -21,13 +21,21 @@ $faultStatuses = [
     'Onaylandı' => 'Onaylandı',
     'Tamamlandı' => 'Tamamlandı'
 ];
+// Add this near the top, after session and config:
+$faultTypes = [
+    1 => "MAKİNE/TESİSAT",
+    2 => "ELEKTRİK",
+    3 => "İNŞAAT"
+];
+function getFaultTypeName($id, $faultTypes) {
+    return $faultTypes[$id] ?? $id;
+}
 // --- GÜNCELLEME İŞLEMİ ---
 $successMsg = $errorMsg = '';
-if (isset($_POST['update_trackingNo'], $_POST['update_status'])) {
+if (isset($_POST['update_trackingNo'], $_POST['update_message'])) {
     $trackingNo = $_POST['update_trackingNo'];
-    $newStatus = $_POST['update_status'];
-    $newDesc = $_POST['update_description'] ?? '';
-    $newContact = $_POST['update_contact'] ?? '';
+    $newMessage = $_POST['update_message'] ?? '';
+    $newStatus = $_POST['update_status'] ?? '';
     $updated = false;
     if (file_exists(PROBLEM_LOG_FILE)) {
         $lines = file(PROBLEM_LOG_FILE, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
@@ -40,9 +48,8 @@ if (isset($_POST['update_trackingNo'], $_POST['update_status'])) {
                 $assignedUser &&
                 mb_strtolower(trim($assignedUser)) === mb_strtolower(trim($currentUser['username']))
             ) {
+                $entry['message'] = $newMessage;
                 $entry['status'] = $newStatus;
-                if ($newDesc !== '') $entry['description'] = $newDesc;
-                if ($newContact !== '') $entry['contact'] = $newContact;
                 $lines[$i] = json_encode($entry, JSON_UNESCAPED_UNICODE);
                 $updated = true;
                 break;
@@ -50,7 +57,7 @@ if (isset($_POST['update_trackingNo'], $_POST['update_status'])) {
         }
         file_put_contents(PROBLEM_LOG_FILE, implode("\n", $lines) . "\n");
         if ($updated) {
-            $successMsg = 'Durum başarıyla güncellendi.';
+            $successMsg = 'Mesaj ve durum başarıyla güncellendi.';
         } else {
             $errorMsg = 'Güncelleme başarısız. Kayıt bulunamadı veya yetkiniz yok.';
         }
@@ -63,13 +70,18 @@ $problems = [];
 $logFile = PROBLEM_LOG_FILE;
 if (file_exists($logFile)) {
     $lines = file($logFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    $latest = [];
     foreach ($lines as $line) {
         $entry = json_decode($line, true);
         $assignedUser = $entry['assignedTo'] ?? ($entry['assigned'] ?? null);
         if ($entry && $assignedUser && mb_strtolower(trim($assignedUser)) === mb_strtolower(trim($currentUser['username']))) {
-            $problems[] = $entry;
+            if (!isset($entry['status']) || trim($entry['status']) === '') {
+                $entry['status'] = 'Bekliyor';
+            }
+            $latest[$entry['trackingNo']] = $entry;
         }
     }
+    $problems = array_values($latest);
 }
 ?>
 <!DOCTYPE html>
@@ -105,6 +117,53 @@ if (file_exists($logFile)) {
   cursor: pointer;
 }
 .table.detail-table { position: relative; }
+.desc-hover {
+  cursor: pointer;
+  color: #0d6efd;
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+  display: inline-block;
+  transition: font-size 0.18s, background 0.18s, color 0.18s;
+}
+.desc-hover:hover {
+  font-size: 1.18em;
+  background: #e3f0fa;
+  color: #005ca9;
+  z-index: 2;
+}
+.msg-bubble {
+  display: block;
+  position: absolute;
+  left: 50%;
+  bottom: 120%;
+  transform: translateX(-50%);
+  min-width: 200px;
+  max-width: 340px;
+  background: #fff;
+  color: #005ca9;
+  border-radius: 10px;
+  box-shadow: 0 6px 32px rgba(0,92,169,0.18);
+  padding: 14px 18px;
+  font-size: 1.08em;
+  z-index: 1000;
+  white-space: pre-line;
+  word-break: break-word;
+  border: 1.5px solid #b6d4fa;
+}
+.msg-bubble::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translateX(-50%);
+  border-width: 8px;
+  border-style: solid;
+  border-color: #fff transparent transparent transparent;
+  filter: drop-shadow(0 2px 2px #b6d4fa);
+}
 </style>
 </head>
 <body class="bg-light">
@@ -186,7 +245,7 @@ if (file_exists($logFile)) {
               <th class="text-center"><i class="bi bi-flag"></i> Durum</th>
               <th class="text-center"><i class="bi bi-calendar"></i> Tarih</th>
               <th class="text-center"><i class="bi bi-telephone"></i> İletişim</th>
-              <th class="text-center"><i class="bi bi-pencil-square"></i> İşlemler</th>
+              <th class="text-center"><i class="bi bi-search"></i> Detay</th>
             </tr>
             </thead>
             <tbody>
@@ -195,8 +254,8 @@ if (file_exists($logFile)) {
     <td class="text-center fw-bold text-primary"><?= htmlspecialchars($entry['trackingNo'] ?? '') ?></td>
     <td>
       <?php if (!empty($entry['description'])): ?>
-        <span style="cursor:pointer; color:#0d6efd;" data-bs-toggle="tooltip" data-bs-title="<?= htmlspecialchars($entry['description']) ?>">
-          <i class="bi bi-info-circle"></i>
+        <span class="desc-hover" onclick="showDescPopup(`<?= htmlspecialchars(addslashes($entry['description'])) ?>`)" title="<?= htmlspecialchars($entry['description']) ?>">
+          <?= htmlspecialchars(mb_strimwidth($entry['description'], 0, 60, '...')) ?>
         </span>
       <?php endif; ?>
     </td>
@@ -206,9 +265,28 @@ if (file_exists($logFile)) {
     elseif ($status === 'Onaylandı') { $badge = 'info'; $statusIcon = 'bi-check-circle'; }
     elseif ($status === 'Tamamlandı') { $badge = 'success'; $statusIcon = 'bi-check2-all'; } ?>
     <td class="text-center">
-      <span class="badge bg-<?= $badge ?>">
-        <i class="bi <?= $statusIcon ?>"></i> <?= htmlspecialchars($status) ?>
+      <span style="cursor:pointer;display:inline-block;vertical-align:middle;"
+      onclick='openUpdatePopup(
+        <?= json_encode($entry["trackingNo"] ?? "") ?>,
+        <?= json_encode($entry["status"] ?? "") ?>,
+        <?= json_encode($entry["message"] ?? "") ?>
+      )'>
+        <span class="badge bg-<?= $badge ?>">
+          <i class="bi <?= $statusIcon ?>"></i> <?= htmlspecialchars($status) ?>
+          <i class="bi bi-pencil ms-1" style="font-size:0.95em;opacity:0.7;"></i>
+        </span>
       </span>
+      <?php if (!empty($entry['message'])): ?>
+        <span class="msg-icon-wrap position-relative" style="margin-left:10px;vertical-align:middle;">
+          <i class="bi bi-chat-left-text-fill text-primary"
+             style="font-size:1.2em;cursor:pointer;"
+             data-tracking="<?= htmlspecialchars($entry['trackingNo']) ?>"
+             onmouseenter="showMsgBubble(this, problemMessages[this.getAttribute('data-tracking')])"
+             onmouseleave="msgBubbleTimeout = setTimeout(hideMsgBubble, 120);"
+             onclick="toggleMsgBubble(this, problemMessages[this.getAttribute('data-tracking')])"
+          ></i>
+        </span>
+      <?php endif; ?>
     </td>
     <td class="text-center"><small><?= htmlspecialchars($entry['date'] ?? '-') ?></small></td>
     <td class="text-center">
@@ -219,18 +297,11 @@ if (file_exists($logFile)) {
       <?php endif; ?>
     </td>
     <td class="text-center">
-      <div class="btn-group" role="group">
-        <button type="button" class="btn btn-primary btn-sm"
-          onclick="openUpdatePopup('<?= htmlspecialchars($entry['trackingNo']) ?>','<?= htmlspecialchars($entry['status']) ?>')"
-          title="Güncelle">
-          <i class="bi bi-pencil"></i>
-        </button>
-        <button type="button" class="btn btn-outline-info btn-sm detail-btn"
-          onclick="openDetailCardbox('<?= htmlspecialchars($entry['trackingNo']) ?>', this, event)"
-          title="Detaylı İncele">
-          <i class="bi bi-search"></i>
-        </button>
-      </div>
+      <button type="button" class="btn btn-outline-info btn-sm detail-btn"
+        onclick="openDetailCardbox('<?= htmlspecialchars($entry['trackingNo']) ?>', this, event)"
+        title="Detay">
+        <i class="bi bi-search"></i> Detay
+      </button>
     </td>
 </tr>
             <?php endforeach; ?>
@@ -370,13 +441,14 @@ if (file_exists($logFile)) {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 <!-- Açıklama popup -->
-<div id="descPopup" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); min-width:280px; background:#fff; border-radius:12px; box-shadow:0 8px 40px rgba(0,0,0,0.18); z-index:9999; padding:1.5rem 1.5rem 1rem 1.5rem;">
-  <div id="descPopupContent"></div>
-  <div class="d-flex justify-content-end mt-2">
-    <button class="btn btn-secondary btn-sm" onclick="closeDescPopup()">Kapat</button>
+<div id="descPopup" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); min-width:320px; max-width:90vw; background:#fff; border-radius:16px; box-shadow:0 8px 40px rgba(0,0,0,0.18); z-index:9999; padding:2.2rem 2.2rem 1.5rem 2.2rem; font-size:1.15em; line-height:1.5;">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <span style="font-size:1.25em;font-weight:600;">Açıklama</span>
+    <button class="btn btn-light btn-sm" style="opacity:0.7;font-size:1.5em;line-height:1;" onclick="closeDescPopup()">&times;</button>
   </div>
+  <div id="descPopupContent" style="max-height:60vh; overflow:auto; word-break:break-word;"></div>
 </div>
-<div id="descOverlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.2); z-index:9998;" onclick="closeDescPopup()"></div>
+<div id="descOverlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:9998;" onclick="closeDescPopup()"></div>
 <script>
 function showDescPopup(desc) {
   document.getElementById('descPopupContent').innerText = desc;
@@ -388,7 +460,7 @@ function closeDescPopup() {
   document.getElementById('descOverlay').style.display = 'none';
 }
 </script>
-<!-- Güncelleme popup -->
+<!-- Güncelleme popup'ı: -->
 <div id="updateOverlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:9998;" onclick="closeUpdatePopup(event)"></div>
 <div id="updatePopup" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); min-width:340px; background:#fff; border-radius:16px; box-shadow:0 8px 40px rgba(0,0,0,0.18); z-index:9999; padding:2rem 2rem 1.5rem 2rem;">
     <form method="post" id="updateForm">
@@ -396,26 +468,26 @@ function closeDescPopup() {
         <div class="mb-3">
             <label class="form-label">Durum</label>
             <select name="update_status" id="update_status" class="form-select" required>
-<?php foreach ($faultStatuses as $key => $label): ?>
-    <option value="<?= $key ?>"><?= $label ?></option>
-<?php endforeach; ?>
-                </select>
+                <option value="Bekliyor">Bekliyor</option>
+                <option value="Onaylandı">Onaylandı</option>
+                <option value="Tamamlandı">Tamamlandı</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Mesaj</label>
+            <textarea name="update_message" id="update_message" class="form-control" rows="3" placeholder="Bu arıza için not veya bilgi mesajı yazın..."></textarea>
         </div>
         <div class="d-flex justify-content-end gap-2">
             <button type="button" class="btn btn-secondary" onclick="closeUpdatePopup()">İptal</button>
             <button type="submit" class="btn btn-success">Kaydet</button>
         </div>
     </form>
-    <script>
-    document.getElementById('updateForm').addEventListener('submit', function() {
-      alert('Form submit edildi!');
-    });
-    </script>
 </div>
 <script>
-function openUpdatePopup(trackingNo, status) {
+function openUpdatePopup(trackingNo, status, message) {
     document.getElementById('update_trackingNo').value = trackingNo;
     document.getElementById('update_status').value = status;
+    document.getElementById('update_message').value = message || '';
     document.getElementById('updateOverlay').style.display = 'block';
     document.getElementById('updatePopup').style.display = 'block';
 }
@@ -428,6 +500,7 @@ function closeUpdatePopup(e) {
 </script>
 <script>
 // PHP'den JS'ye arıza verilerini dizi (array) olarak aktar
+const faultTypes = <?= json_encode($faultTypes, JSON_UNESCAPED_UNICODE) ?>;
 const problemsData = <?php echo json_encode($problems, JSON_UNESCAPED_UNICODE); ?>;
 let openCardbox = null;
 function openDetailCardbox(trackingNo, btn, event) {
@@ -450,7 +523,7 @@ function openDetailCardbox(trackingNo, btn, event) {
         html += `<div class='mb-2 text-muted'>Dosya eklenmemiş.</div>`;
     }
     html += `<div class='mb-2'><b>Birim:</b> ${p.department ?? '-'}</div>`;
-    html += `<div class='mb-2'><b>Arıza Türü:</b> ${p.faultType ?? '-'}</div>`;
+    html += `<div class='mb-2'><b>Arıza Türü:</b> ${faultTypes[p.faultType] ?? p.faultType}</div>`;
     html += `<div class='mb-2'><b>Durum:</b> ${p.status ?? '-'}</div>`;
     html += `<div class='mb-2'><b>Tarih:</b> ${p.date ?? '-'}</div>`;
     const card = document.createElement('div');
@@ -520,5 +593,34 @@ if (localStorage.getItem('darkMode') === '1') setDarkMode(true);
     </div>
   </div>
 </div>
+<script>
+let msgBubbleEl = null;
+let msgBubbleTimeout = null;
+function showMsgBubble(icon, msg) {
+  hideMsgBubble();
+  msgBubbleEl = document.createElement('div');
+  msgBubbleEl.className = 'msg-bubble';
+  msgBubbleEl.innerText = msg;
+  icon.parentElement.appendChild(msgBubbleEl);
+  msgBubbleEl.addEventListener('mouseenter', function() {
+    if (msgBubbleTimeout) clearTimeout(msgBubbleTimeout);
+  });
+  msgBubbleEl.addEventListener('mouseleave', function() {
+    hideMsgBubble();
+  });
+}
+function hideMsgBubble() {
+  if (msgBubbleTimeout) clearTimeout(msgBubbleTimeout);
+  if (msgBubbleEl && msgBubbleEl.parentElement) msgBubbleEl.parentElement.removeChild(msgBubbleEl);
+  msgBubbleEl = null;
+}
+function toggleMsgBubble(icon, msg) {
+  if (msgBubbleEl) { hideMsgBubble(); return; }
+  showMsgBubble(icon, msg);
+}
+</script>
+<script>
+const problemMessages = <?= json_encode(array_column($problems, 'message', 'trackingNo'), JSON_UNESCAPED_UNICODE) ?>;
+</script>
 </body>
 </html> 

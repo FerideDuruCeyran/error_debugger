@@ -19,7 +19,7 @@ if (isset($_POST['update_trackingNo'], $_POST['update_status'])) {
     $trackingNo = $_POST['update_trackingNo'];
     $newStatus = $_POST['update_status'];
     $newTech = $_POST['update_technician'] ?? '';
-    $newDesc = $_POST['update_description'] ?? '';
+    $newMessage = $_POST['update_message'] ?? '';
     if (file_exists(PROBLEM_LOG_FILE)) {
         $lines = file(PROBLEM_LOG_FILE, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
         foreach ($lines as $i => $line) {
@@ -27,7 +27,7 @@ if (isset($_POST['update_trackingNo'], $_POST['update_status'])) {
             if ($entry && isset($entry['trackingNo']) && $entry['trackingNo'] === $trackingNo) {
                 $entry['status'] = $newStatus;
                 $entry['assignedTo'] = $newTech;
-                $entry['description'] = $newDesc;
+                $entry['message'] = $newMessage;
                 $lines[$i] = json_encode($entry, JSON_UNESCAPED_UNICODE);
                 break;
             }
@@ -168,6 +168,16 @@ $faultStatuses = [
     'Onaylandı' => 'Onaylandı',
     'Tamamlandı' => 'Tamamlandı'
 ];
+
+// Arıza türleri
+$faultTypes = [
+    1 => "MAKİNE/TESİSAT",
+    2 => "ELEKTRİK",
+    3 => "İNŞAAT"
+];
+function getFaultTypeName($id, $faultTypes) {
+    return $faultTypes[$id] ?? $id;
+}
 
 // İstatistikler için değişkenler
 $totalFaults = 0;
@@ -442,6 +452,35 @@ if (file_exists(PROBLEM_LOG_FILE)) {
       color: #222;
       border-left-color: #0d6efd;
     }
+    .status-editable {
+      cursor: pointer;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .status-editable .badge {
+      font-size: 1.08em;
+      padding: 0.55em 1.1em 0.55em 1.1em;
+      border-radius: 1.2em;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(13,110,253,0.08);
+      letter-spacing: 0.01em;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4em;
+      transition: background 0.18s, color 0.18s;
+    }
+    .status-editable .edit-icon {
+      font-size: 1.08em;
+      color: #0d6efd;
+      opacity: 0.55;
+      margin-left: 0.18em;
+      transition: color 0.18s, opacity 0.18s;
+      vertical-align: middle;
+    }
+    .status-editable:hover .edit-icon {
+      color: #005ca9;
+      opacity: 1;
+    }
     </style>
 </head>
 <body class="bg-light">
@@ -495,12 +534,12 @@ if (file_exists(PROBLEM_LOG_FILE)) {
                     <i class="bi bi-funnel"></i> Duruma Göre Filtrele:
                 </label>
                 <select name="filter" class="form-select w-auto" onchange="this.form.submit()">
-                    <option value="" <?= $filter === '' ? 'selected' : '' ?>>Tümü</option>
+                <option value="" <?= $filter === '' ? 'selected' : '' ?>>Tümü</option>
     <?php foreach ($faultStatuses as $key => $label): ?>
         <option value="<?= $key ?>" <?= $filter === $key ? 'selected' : '' ?>><?= $label ?></option>
     <?php endforeach; ?>
-                </select>
-            </form>
+            </select>
+    </form>
         </div>
         <div class="col-md-6 text-md-end">
             <span class="badge bg-primary fs-6">
@@ -597,25 +636,25 @@ if (file_exists(PROBLEM_LOG_FILE)) {
                         <div class="w-100 d-block">
                             <small class="form-text" id="selectedFaultInfo"></small>
                         </div>
-                    </div>
+            </div>
                     <div class="col-12 col-md-5">
                         <label class="form-label fw-bold mb-1"><i class="bi bi-person-workspace"></i> Teknisyen</label>
                         <select name="assign_personnel" class="form-select form-select-lg mb-0" required>
                             <option value="">Teknisyen seçin...</option>
-                            <?php foreach ($teknisyenler as $t): ?>
-                                <option value="<?= htmlspecialchars($t['username']) ?>">
-                                    <?= htmlspecialchars($t['username']) ?><?php if (!empty($t['profession'])): ?> (<?= htmlspecialchars($t['profession']) ?>)<?php endif; ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
+                    <?php foreach ($teknisyenler as $t): ?>
+                        <option value="<?= htmlspecialchars($t['username']) ?>">
+                            <?= htmlspecialchars($t['username']) ?><?php if (!empty($t['profession'])): ?> (<?= htmlspecialchars($t['profession']) ?>)<?php endif; ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
                     <div class="col-12 col-md-3 d-grid">
                         <button type="submit" name="assign_tech" class="btn btn-success btn-lg h-100 w-100 mt-0">
                             <i class="bi bi-check-circle"></i> Ata
                         </button>
-                    </div>
-                </div>
-            </form>
+            </div>
+        </div>
+    </form>
         </div>
     </div>
     <div class="table-responsive">
@@ -626,10 +665,10 @@ if (file_exists(PROBLEM_LOG_FILE)) {
             <th class="text-center"><i class="bi bi-tag"></i> Tür</th>
             <th><i class="bi bi-card-heading"></i> Başlık</th>
             <th><i class="bi bi-building"></i> Birim</th>
-            <th><i class="bi bi-cpu"></i> Bilgisayar Özellikleri</th>
+            <th><i class="bi bi-card-text"></i> Tanım</th>
             <th><i class="bi bi-telephone"></i> İletişim</th>
             <th class="text-center"><i class="bi bi-calendar"></i> Tarih</th>
-            <th class="text-center"><i class="bi bi-flag"></i> Durum</th>
+            <th class="text-center" style="min-width: 200px;">Durum</th>
             <th><i class="bi bi-person-workspace"></i> Teknisyen</th>
             <th class="text-center"><i class="bi bi-pencil-square"></i> İşlemler</th>
             <?php if ($currentUser && $currentUser['role'] === 'MainAdmin'): ?>
@@ -639,86 +678,102 @@ if (file_exists(PROBLEM_LOG_FILE)) {
         </thead>
         <tbody>
         <?php foreach ($problems as $p): ?>
-            <tr>
-                <td class="text-center fw-bold text-primary"><?= htmlspecialchars($p['trackingNo']) ?></td>
-                <td class="text-center"><span class="badge bg-secondary"><?= htmlspecialchars($p['faultType']) ?></span></td>
-                <td><strong><?= htmlspecialchars($p['title'] ?? '-') ?></strong></td>
-                <td><i class="bi bi-building text-muted"></i> <?= htmlspecialchars($p['department']) ?></td>
-                <td><small class="text-muted"><?= htmlspecialchars($p['specs'] ?? '-') ?></small></td>
-                <td><i class="bi bi-telephone text-muted"></i> <?= htmlspecialchars($p['contact'] ?? '-') ?></td>
-                <td class="text-center"><small><?= htmlspecialchars($p['date']) ?></small></td>
-                <td class="text-center">
-                    <?php 
-                    $statusClass = '';
-                    $statusIcon = '';
-                    switch($p['status']) {
-                        case 'Bekliyor':
-                            $statusClass = 'bg-warning text-dark';
-                            $statusIcon = 'bi-clock';
-                            break;
-                        case 'Onaylandı':
-                            $statusClass = 'bg-info text-white';
-                            $statusIcon = 'bi-check-circle';
-                            break;
-                        case 'Tamamlandı':
-                            $statusClass = 'bg-success text-white';
-                            $statusIcon = 'bi-check2-all';
-                            break;
-                        default:
-                            $statusClass = 'bg-secondary text-white';
-                            $statusIcon = 'bi-question-circle';
-                    }
-                    ?>
-                    <span class="badge <?= $statusClass ?>">
-                        <i class="bi <?= $statusIcon ?>"></i> <?= htmlspecialchars($p['status']) ?>
-                    </span>
-                </td>
-                <td>
-                    <?php 
-                    $assignedTech = '';
-                    if (isset($p['assignedTo']) && !empty($p['assignedTo'])) {
-                        $assignedTech = $p['assignedTo'];
-                    } elseif (isset($p['assigned']) && !empty($p['assigned'])) {
-                        $assignedTech = $p['assigned'];
-                    }
-                    
-                    if (!empty($assignedTech)): ?>
-                        <span class="badge bg-primary">
-                            <i class="bi bi-person-workspace"></i> <?= htmlspecialchars($assignedTech) ?>
-                        </span>
-                    <?php else: ?>
-                        <span class="text-muted"><small>Atanmamış</small></span>
-                    <?php endif; ?>
-                </td>
-                <td class="text-center">
-                    <div class="btn-group" role="group">
-                        <button type="button" class="btn btn-primary btn-sm"
-                            onclick="openUpdatePopup(
-                                '<?= htmlspecialchars($p['trackingNo']) ?>',
-                                '<?= htmlspecialchars($p['status']) ?>',
-                                '<?= htmlspecialchars($assignedTech) ?>',
-                                this.dataset.description
-                            )"
-                            data-description="<?= htmlspecialchars(isset($p['description']) ? $p['description'] : '', ENT_QUOTES) ?>"
-                            title="Güncelle"
-                        >
-                            <i class="bi bi-pencil"></i>
-                        </button>
-                        <button type="button" class="btn btn-outline-info btn-sm detail-btn" 
-                            onclick="openDetailCardbox('<?= htmlspecialchars($p['trackingNo']) ?>', this, event)"
-                            title="Detaylı İncele"
-                        >
-                            <i class="bi bi-search"></i>
-                        </button>
-                    </div>
+    <?php 
+    $assignedTech = '';
+    if (isset($p['assignedTo']) && !empty($p['assignedTo'])) {
+        $assignedTech = $p['assignedTo'];
+    } elseif (isset($p['assigned']) && !empty($p['assigned'])) {
+        $assignedTech = $p['assigned'];
+    }
+    ?>
+    <tr>
+        <td class="text-center fw-bold text-primary"><?= htmlspecialchars($p['trackingNo']) ?></td>
+        <td class="text-center"><span class="badge bg-secondary"><?= htmlspecialchars(getFaultTypeName($p['faultType'], $faultTypes)) ?></span></td>
+        <td><strong><?= htmlspecialchars($p['title'] ?? '-') ?></strong></td>
+        <td><i class="bi bi-building text-muted"></i> <?= htmlspecialchars($p['department']) ?></td>
+        <td>
+          <?php if (!empty($p['description'])): ?>
+            <span class="desc-hover" onclick="showDescPopup(`<?= htmlspecialchars(addslashes($p['description'])) ?>`)" title="<?= htmlspecialchars($p['description']) ?>">
+              <?= htmlspecialchars(mb_strimwidth($p['description'], 0, 60, '...')) ?>
+            </span>
+          <?php endif; ?>
+        </td>
+        <td><i class="bi bi-telephone text-muted"></i> <?= htmlspecialchars($p['contact'] ?? '-') ?></td>
+        <td class="text-center"><small><?= htmlspecialchars($p['date']) ?></small></td>
+        <td class="text-center" style="min-width:200px; white-space:nowrap;">
+            <?php 
+            $statusClass = '';
+            $statusIcon = '';
+            switch($p['status']) {
+                case 'Bekliyor':
+                    $statusClass = 'bg-warning text-dark';
+                    $statusIcon = 'bi-clock';
+                    break;
+                case 'Onaylandı':
+                    $statusClass = 'bg-info text-white';
+                    $statusIcon = 'bi-check-circle';
+                    break;
+                case 'Tamamlandı':
+                    $statusClass = 'bg-success text-white';
+                    $statusIcon = 'bi-check2-all';
+                    break;
+                default:
+                    $statusClass = 'bg-secondary text-white';
+                    $statusIcon = 'bi-question-circle';
+            }
+            ?>
+            <span class="status-editable"
+      onclick='openUpdatePopup(
+        <?= json_encode($p["trackingNo"] ?? "") ?>,
+        <?= json_encode($p["status"] ?? "Bekliyor") ?>,
+        <?= json_encode($assignedTech ?? "") ?>,
+        <?= json_encode($p["message"] ?? "") ?>
+      )'
+      title="Durumu Düzenle">
+              <span class="badge <?= $statusClass ?>">
+                <i class="bi <?= $statusIcon ?>"></i> <?= htmlspecialchars($p['status']) ?>
+                <i class="bi bi-pencil ms-1 edit-icon"></i>
+              </span>
+            </span>
+            <?php if (!empty($p['message'])): ?>
+            <span class="msg-icon-wrap position-relative" style="margin-left:10px;vertical-align:middle;">
+              <i class="bi bi-chat-left-text-fill text-primary"
+                 style="font-size:1.2em;cursor:pointer;"
+                 data-tracking="<?= htmlspecialchars($p['trackingNo']) ?>"
+                 onmouseenter="showMsgBubble(this, problemMessages[this.getAttribute('data-tracking')])"
+                 onmouseleave="msgBubbleTimeout = setTimeout(hideMsgBubble, 120);"
+                 onclick="toggleMsgBubble(this, problemMessages[this.getAttribute('data-tracking')])"
+              ></i>
+            </span>
+            <?php endif; ?>
+        </td>
+        <td>
+            <?php if (!empty($assignedTech)): ?>
+                <span class="badge bg-primary">
+                    <i class="bi bi-person-workspace"></i> <?= htmlspecialchars($assignedTech) ?>
+                </span>
+            <?php else: ?>
+                <span class="text-muted"><small>Atanmamış</small></span>
+            <?php endif; ?>
+        </td>
+        <td class="text-center">
+            <div class="btn-group" role="group">
+            <!-- Kalem butonunu kaldırdık, sadece detay butonu kaldı -->
+            <button type="button" class="btn btn-outline-info btn-sm detail-btn" 
+                onclick="openDetailCardbox('<?= htmlspecialchars($p['trackingNo']) ?>', this, event)"
+                title="Detaylı İncele"
+            >
+                <i class="bi bi-search"></i>
+            </button>
+            </div>
                 </td>
                 <?php if ($currentUser && $currentUser['role'] === 'MainAdmin'): ?>
-                <td class="text-center">
+        <td class="text-center">
                     <form method="post" onsubmit="return confirm('Bu arızayı silmek istediğinize emin misiniz?');" style="display:inline-block">
                         <input type="hidden" name="delete_trackingNo" value="<?= htmlspecialchars($p['trackingNo']) ?>">
-                        <button type="submit" name="delete_fault" class="btn btn-danger btn-sm" title="Sil">
-                            <i class="bi bi-trash"></i>
-                        </button>
+                <button type="submit" name="delete_fault" class="btn btn-danger btn-sm" title="Sil">
+                    <i class="bi bi-trash"></i>
+                </button>
                     </form>
                 </td>
                 <?php endif; ?>
@@ -752,8 +807,8 @@ if (file_exists(PROBLEM_LOG_FILE)) {
                 </select>
             </div>
             <div class="mb-3">
-                <label class="form-label">Açıklama</label>
-                <textarea name="update_description" id="update_description" class="form-control" rows="2"></textarea>
+            <label class="form-label">Mesaj</label>
+            <textarea name="update_message" id="update_message" class="form-control" rows="3" placeholder="Bu arıza için not veya bilgi mesajı yazın..."></textarea>
             </div>
             <div class="d-flex justify-content-end gap-2">
                 <button type="button" class="btn btn-secondary" onclick="closeUpdatePopup()">İptal</button>
@@ -762,11 +817,12 @@ if (file_exists(PROBLEM_LOG_FILE)) {
         </form>
     </div>
     <script>
-    function openUpdatePopup(trackingNo, status, technician, description) {
+function openUpdatePopup(trackingNo, status, technician, message) {
+    console.log('[DEBUG] openUpdatePopup called with:', {trackingNo, status, technician, message});
         document.getElementById('update_trackingNo').value = trackingNo;
-        document.getElementById('update_status').value = status;
-        document.getElementById('update_technician').value = technician;
-        document.getElementById('update_description').value = description || '';
+    document.getElementById('update_status').value = status || 'Bekliyor';
+    document.getElementById('update_technician').value = technician || '';
+    document.getElementById('update_message').value = message || '';
         document.getElementById('updateOverlay').style.display = 'block';
         document.getElementById('updatePopup').style.display = 'block';
     }
@@ -883,6 +939,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 <script>
 // PHP'den JS'ye arıza verilerini dizi (array) olarak aktar
+const faultTypes = <?= json_encode($faultTypes, JSON_UNESCAPED_UNICODE) ?>;
 const problemsData = <?php echo json_encode($problems, JSON_UNESCAPED_UNICODE); ?>;
 let openCardbox = null;
 function openDetailCardbox(trackingNo, btn, event) {
@@ -904,8 +961,11 @@ function openDetailCardbox(trackingNo, btn, event) {
     } else {
         html += `<div class='mb-2 text-muted'>Dosya eklenmemiş.</div>`;
     }
+    if (p.message && p.message !== '') {
+      html += `<div class='mb-2'><b>Teknik Personel Mesajı:</b><br><span>${p.message}</span></div>`;
+    }
     html += `<div class='mb-2'><b>Birim:</b> ${p.department ?? '-'}</div>`;
-    html += `<div class='mb-2'><b>Arıza Türü:</b> ${p.faultType ?? '-'}</div>`;
+    html += `<div class='mb-2'><b>Arıza Türü:</b> ${faultTypes[p.faultType] ?? p.faultType}</div>`;
     html += `<div class='mb-2'><b>Durum:</b> ${p.status ?? '-'}</div>`;
     html += `<div class='mb-2'><b>Tarih:</b> ${p.date ?? '-'}</div>`;
     const card = document.createElement('div');
@@ -927,6 +987,86 @@ setTimeout(() => {
       }
   });
 }, 0);
+</script>
+<!-- Açıklama popup -->
+<div id="descPopup" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); min-width:320px; max-width:90vw; background:#fff; border-radius:16px; box-shadow:0 8px 40px rgba(0,0,0,0.18); z-index:9999; padding:2.2rem 2.2rem 1.5rem 2.2rem; font-size:1.15em; line-height:1.5;">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <span style="font-size:1.25em;font-weight:600;">Açıklama</span>
+    <button class="btn btn-light btn-sm" style="opacity:0.7;font-size:1.5em;line-height:1;" onclick="closeDescPopup()">&times;</button>
+  </div>
+  <div id="descPopupContent" style="max-height:60vh; overflow:auto; word-break:break-word;"></div>
+</div>
+<div id="descOverlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:9998;" onclick="closeDescPopup()"></div>
+<script>
+function showDescPopup(desc) {
+  document.getElementById('descPopupContent').innerText = desc;
+  document.getElementById('descPopup').style.display = 'block';
+  document.getElementById('descOverlay').style.display = 'block';
+}
+function closeDescPopup() {
+  document.getElementById('descPopup').style.display = 'none';
+  document.getElementById('descOverlay').style.display = 'none';
+}
+</script>
+<!-- Mesaj bubble -->
+<style>
+.msg-bubble {
+  display: block;
+  position: absolute;
+  left: 50%;
+  bottom: 120%;
+  transform: translateX(-50%);
+  min-width: 200px;
+  max-width: 340px;
+  background: #fff;
+  color: #005ca9;
+  border-radius: 10px;
+  box-shadow: 0 6px 32px rgba(0,92,169,0.18);
+  padding: 14px 18px;
+  font-size: 1.08em;
+  z-index: 1000;
+  white-space: pre-line;
+  word-break: break-word;
+  border: 1.5px solid #b6d4fa;
+}
+.msg-bubble::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translateX(-50%);
+  border-width: 8px;
+  border-style: solid;
+  border-color: #fff transparent transparent transparent;
+  filter: drop-shadow(0 2px 2px #b6d4fa);
+}
+</style>
+<script>
+let msgBubbleEl = null;
+let msgBubbleTimeout = null;
+function showMsgBubble(icon, msg) {
+  hideMsgBubble();
+  msgBubbleEl = document.createElement('div');
+  msgBubbleEl.className = 'msg-bubble';
+  msgBubbleEl.innerText = msg;
+  icon.parentElement.appendChild(msgBubbleEl);
+  msgBubbleEl.addEventListener('mouseenter', function() {
+    if (msgBubbleTimeout) clearTimeout(msgBubbleTimeout);
+  });
+  msgBubbleEl.addEventListener('mouseleave', function() {
+    hideMsgBubble();
+  });
+}
+function hideMsgBubble() {
+  if (msgBubbleTimeout) clearTimeout(msgBubbleTimeout);
+  if (msgBubbleEl && msgBubbleEl.parentElement) msgBubbleEl.parentElement.removeChild(msgBubbleEl);
+  msgBubbleEl = null;
+}
+function toggleMsgBubble(icon, msg) {
+  if (msgBubbleEl) { hideMsgBubble(); return; }
+  showMsgBubble(icon, msg);
+}
+const problemMessages = <?= json_encode(array_column($problems, 'message', 'trackingNo'), JSON_UNESCAPED_UNICODE) ?>;
 </script>
 </body>
 </html> 
