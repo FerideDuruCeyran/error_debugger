@@ -87,11 +87,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <h3>Arıza Bilgileri</h3>
                         <ul class="list-group mb-3">
                             <li class="list-group-item"><b>Arıza Durumu:</b> <span class="badge bg-<?= $faultStatusBadges[$result['status']] ?? 'secondary' ?> text-dark"><?= $faultStatuses[$result['status']] ?? $result['status'] ?></span></li>
-                            <li class="list-group-item"><b>Başlık:</b> <?= htmlspecialchars($result['title'] ?? '') ?></li>
-                            <li class="list-group-item"><b>İçerik:</b> <?= htmlspecialchars($result['content'] ?? '') ?></li>
-                            <li class="list-group-item"><b>Bilgisayar Özellikleri:</b> <?= htmlspecialchars($result['specs'] ?? '-') ?></li>
+                            <li class="list-group-item"><b>Genel Açıklama:</b>
+    <?= htmlspecialchars($result['content'] ?? $result['detailedDescription'] ?? '') ?>
+    <?php if (!empty($result['specs'])): ?>
+        <br><b>Bilgisayar Özellikleri:</b> <?= htmlspecialchars($result['specs']) ?>
+    <?php endif; ?>
+</li>
                             <li class="list-group-item"><b>Birim:</b> <?= htmlspecialchars($result['department']) ?></li>
-                            <li class="list-group-item"><b>Tarih:</b> <?= htmlspecialchars($result['date']) ?></li>
+                            <li class="list-group-item"><b>Tarih:</b> <span class="server-date" data-server-date="<?= htmlspecialchars($result['date']) ?>"><?= htmlspecialchars($result['date']) ?></span></li>
                             <li class="list-group-item"><b>İletişim:</b> <i class="bi bi-telephone"></i> <?= htmlspecialchars($result['contact']) ?></li>
                             <?php if (!empty($result['assignedTo'])): ?>
                                 <li class="list-group-item"><b>Atanan Kişi:</b> <i class="bi bi-person"></i> <?= htmlspecialchars($result['assignedTo']) ?></li>
@@ -184,6 +187,32 @@ if (feedbackForm) {
     feedbackForm.reset();
   };
 }
+
+// Local time gösterimi
+function convertToLocalTime() {
+  document.querySelectorAll('.server-date').forEach(function(el) {
+    var serverDate = el.getAttribute('data-server-date');
+    if (serverDate) {
+      // Sunucu tarihi formatı: 'YYYY-MM-DD HH:mm:ss'
+      var dateParts = serverDate.split(' ');
+      if (dateParts.length === 2) {
+        var date = dateParts[0].split('-');
+        var time = dateParts[1].split(':');
+        // new Date(year, monthIndex, day, hour, minute, second)
+        var jsDate = new Date(
+          Number(date[0]),
+          Number(date[1]) - 1,
+          Number(date[2]),
+          Number(time[0]),
+          Number(time[1]),
+          Number(time[2])
+        );
+        el.textContent = jsDate.toLocaleString();
+      }
+    }
+  });
+}
+convertToLocalTime();
 </script>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 </body>

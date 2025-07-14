@@ -628,7 +628,7 @@ if (file_exists(PROBLEM_LOG_FILE)) {
                                             data-department="<?= htmlspecialchars($p['department']) ?>"
                                             data-type="<?= htmlspecialchars($p['faultType']) ?>"
                                             data-date="<?= htmlspecialchars($p['date']) ?>">
-                                        <?= htmlspecialchars($p['trackingNo']) ?> - <?= htmlspecialchars($p['title'] ?? $p['faultType']) ?> (<?= htmlspecialchars($p['department']) ?>)
+                                        <?= htmlspecialchars($p['trackingNo']) ?> - <?= htmlspecialchars($p['department']) ?>
                                     </option>
                                 <?php endforeach; ?>
                             <?php endif; ?>
@@ -663,9 +663,8 @@ if (file_exists(PROBLEM_LOG_FILE)) {
         <tr>
             <th class="text-center"><i class="bi bi-hash"></i> Takip No</th>
             <th class="text-center"><i class="bi bi-tag"></i> Tür</th>
-            <th><i class="bi bi-card-heading"></i> Başlık</th>
             <th><i class="bi bi-building"></i> Birim</th>
-            <th><i class="bi bi-card-text"></i> Tanım</th>
+            <th><i class="bi bi-card-text"></i> Açıklama</th>
             <th><i class="bi bi-telephone"></i> İletişim</th>
             <th class="text-center"><i class="bi bi-calendar"></i> Tarih</th>
             <th class="text-center" style="min-width: 200px;">Durum</th>
@@ -689,14 +688,15 @@ if (file_exists(PROBLEM_LOG_FILE)) {
     <tr>
         <td class="text-center fw-bold text-primary"><?= htmlspecialchars($p['trackingNo']) ?></td>
         <td class="text-center"><span class="badge bg-secondary"><?= htmlspecialchars(getFaultTypeName($p['faultType'], $faultTypes)) ?></span></td>
-        <td><strong><?= htmlspecialchars($p['title'] ?? '-') ?></strong></td>
         <td><i class="bi bi-building text-muted"></i> <?= htmlspecialchars($p['department']) ?></td>
         <td>
-          <?php if (!empty($p['description'])): ?>
-            <span class="desc-hover" onclick="showDescPopup(`<?= htmlspecialchars(addslashes($p['description'])) ?>`)" title="<?= htmlspecialchars($p['description']) ?>">
-              <?= htmlspecialchars(mb_strimwidth($p['description'], 0, 60, '...')) ?>
-            </span>
-          <?php endif; ?>
+  <?php 
+    $desc = $p['description'] ?? $p['detailedDescription'] ?? $p['content'] ?? '';
+    if (!empty($desc)) : ?>
+    <span class="desc-hover" onclick="showDescPopup(`<?= htmlspecialchars(addslashes($desc)) ?>`)" title="<?= htmlspecialchars($desc) ?>">
+      <?= htmlspecialchars(mb_strimwidth($desc, 0, 60, '...')) ?>
+    </span>
+  <?php endif; ?>
         </td>
         <td><i class="bi bi-telephone text-muted"></i> <?= htmlspecialchars($p['contact'] ?? '-') ?></td>
         <td class="text-center"><small><?= htmlspecialchars($p['date']) ?></small></td>

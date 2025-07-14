@@ -332,8 +332,7 @@ function js_safe($str) {
     <tr>
         <th>Takip No</th>
         <th>Açıklama</th>
-        <th>Birim</th>
-        <th>Tanım</th>
+        <th>Bölüm</th>
         <th>İletişim</th>
         <th>Atanan</th>
         <th class="text-center" style="min-width: 200px;">Durum</th>
@@ -349,97 +348,90 @@ function js_safe($str) {
     </tr>
     </thead>
     <tbody>
-    <?php
-    // Arıza listesi oluşturulurken:
-    $problems = [];
-    if (file_exists(PROBLEM_LOG_FILE)) {
-        $lines = file(PROBLEM_LOG_FILE, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-        $latest = [];
-        foreach ($lines as $line) {
-            $entry = json_decode($line, true);
-            if ($entry && isset($entry['trackingNo'])) {
-                if (!isset($entry['status']) || trim($entry['status']) === '') {
-                    $entry['status'] = 'Bekliyor';
-                }
-                $latest[$entry['trackingNo']] = $entry;
+<?php
+$problems = [];
+if (file_exists(PROBLEM_LOG_FILE)) {
+    $lines = file(PROBLEM_LOG_FILE, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    $latest = [];
+    foreach ($lines as $line) {
+        $entry = json_decode($line, true);
+        if ($entry && isset($entry['trackingNo'])) {
+            if (!isset($entry['status']) || trim($entry['status']) === '') {
+                $entry['status'] = 'Bekliyor';
             }
+            $latest[$entry['trackingNo']] = $entry;
         }
-        $problems = array_values($latest);
     }
-    // Ensure all required fields exist for JS and every entry has a trackingNo
-    foreach ($problems as &$entry) {
-        // If filePath exists, use its base name as trackingNo
-        if (!isset($entry['trackingNo']) || !$entry['trackingNo']) {
-            if (!empty($entry['filePath'])) {
-                $fileBase = pathinfo($entry['filePath'], PATHINFO_FILENAME);
-                $entry['trackingNo'] = $fileBase;
-            } elseif (isset($entry['title']) && isset($entry['date'])) {
-                $entry['trackingNo'] = $entry['title'] . '_' . $entry['date'];
-            } else {
-                $entry['trackingNo'] = uniqid('trk_');
-            }
-        }
-        if (!isset($entry['detailedDescription'])) $entry['detailedDescription'] = '';
-        if (!isset($entry['filePath'])) $entry['filePath'] = '';
+    $problems = array_values($latest);
+}
+?>
+<?php
+foreach ($problems as $entry):
+    echo '<tr>';
+    // 1. Takip No
+    echo '<td class="text-center fw-bold text-primary">' . htmlspecialchars($entry['trackingNo']) . '</td>';
+    // 2. Açıklama
+    $desc = $entry['description'] ?? $entry['detailedDescription'] ?? $entry['content'] ?? '';
+    if (!empty($desc)) {
+        echo '<td><span class="desc-hover" onclick="showDescPopup(' . json_encode($desc) . ')">' . htmlspecialchars(mb_strimwidth($desc, 0, 60, '...')) . '</span></td>';
+    } else {
+        echo '<td>-</td>';
     }
-    unset($entry);
-    ?>
-    <?php
-    foreach ($problems as $entry):
-        echo '<tr>';
-        echo '<td class="text-center fw-bold text-primary">' . htmlspecialchars($entry['trackingNo']) . '</td>';
-        echo '<td>';
-        if (!empty($entry['description'])) {
-            echo '<span class="desc-hover" onclick="showDescPopup(' . json_encode($entry['description']) . ')">' . htmlspecialchars(mb_strimwidth($entry['description'], 0, 60, '...')) . '</span>';
-        }
-        echo '</td>';
-        echo '<td>' . htmlspecialchars($entry['department'] ?? '-') . '</td>';
-        echo '<td class="text-center"><span class="badge bg-secondary">' . htmlspecialchars(getFaultTypeName($entry['faultType'], $faultTypes)) . '</span></td>';
-        echo '<td>' . htmlspecialchars($entry['contact'] ?? '-') . '</td>';
-        echo '<td>' . htmlspecialchars($entry['assignedTo'] ?? '-') . '</td>';
-        $status = $entry['status'] ?? '-';
-        $badge = 'secondary'; $statusIcon = 'bi-question-circle';
-        if ($status === 'Bekliyor') { $badge = 'warning'; $statusIcon = 'bi-clock'; }
-        elseif ($status === 'Onaylandı') { $badge = 'info'; $statusIcon = 'bi-check-circle'; }
-        elseif ($status === 'Tamamlandı') { $badge = 'success'; $statusIcon = 'bi-check2-all'; }
-        echo '<td class="text-center" style="min-width:200px; white-space:nowrap;">';
-        echo '<span style="cursor:pointer;display:inline-flex;align-items:center;gap:8px;">';
-        echo '<span class="badge bg-' . $badge . '"><i class="bi ' . $statusIcon . '"></i> ' . htmlspecialchars($status);
-        echo '<i class="bi bi-pencil ms-1 edit-icon" style="cursor:pointer;" onclick="openStatusEditPopup(this,'
-            . '\'' . js_safe($entry['trackingNo']) . '\','
-            . '\'' . js_safe($status) . '\','
-            . '\'' . js_safe($entry['assignedTo'] ?? '') . '\','
-            . '\'' . js_safe($entry['message'] ?? '') . '\')"></i></span>';
-        if (!empty($entry['message'])) {
-            echo '<span class="msg-icon-wrap position-relative" style="margin-left:10px;vertical-align:middle;">';
-            echo '<i class="bi bi-chat-left-text-fill text-primary" style="font-size:1.2em;cursor:pointer;" data-tracking="' . htmlspecialchars($entry['trackingNo']) . '" onmouseenter="showMsgBubble(this, problemMessages[this.getAttribute(\'data-tracking\')])" onmouseleave="msgBubbleTimeout = setTimeout(hideMsgBubble, 120);" onclick="toggleMsgBubble(this, problemMessages[this.getAttribute(\'data-tracking\')])"></i>';
-            echo '</span>';
-        }
+    // 3. Bölüm
+    echo '<td>' . htmlspecialchars($entry['department'] ?? '-') . '</td>';
+    // 4. İletişim
+    echo '<td>' . htmlspecialchars($entry['contact'] ?? '-') . '</td>';
+    // 5. Atanan
+    echo '<td>' . htmlspecialchars($entry['assignedTo'] ?? '-') . '</td>';
+    // 6. Durum
+    $status = $entry['status'] ?? '-';
+    $badge = 'secondary'; $statusIcon = 'bi-question-circle';
+    if ($status === 'Bekliyor') { $badge = 'warning'; $statusIcon = 'bi-clock'; }
+    elseif ($status === 'Onaylandı') { $badge = 'info'; $statusIcon = 'bi-check-circle'; }
+    elseif ($status === 'Tamamlandı') { $badge = 'success'; $statusIcon = 'bi-check2-all'; }
+    echo '<td class="text-center" style="min-width:200px; white-space:nowrap;">';
+    echo '<span style="cursor:pointer;display:inline-flex;align-items:center;gap:8px;">';
+    echo '<span class="badge bg-' . $badge . '"><i class="bi ' . $statusIcon . '"></i> ' . htmlspecialchars($status);
+    echo '<i class="bi bi-pencil ms-1 edit-icon" style="cursor:pointer;" onclick="openStatusEditPopup(this,'
+        . '\'' . js_safe($entry['trackingNo']) . '\','
+        . '\'' . js_safe($status) . '\','
+        . '\'' . js_safe($entry['assignedTo'] ?? '') . '\','
+        . '\'' . js_safe($entry['message'] ?? '') . '\')"></i></span>';
+    if (!empty($entry['message'])) {
+        echo '<span class="msg-icon-wrap position-relative" style="margin-left:10px;vertical-align:middle;">';
+        echo '<i class="bi bi-chat-left-text-fill text-primary" style="font-size:1.2em;cursor:pointer;" data-tracking="' . htmlspecialchars($entry['trackingNo']) . '" onmouseenter="showMsgBubble(this, problemMessages[this.getAttribute(\'data-tracking\')])" onmouseleave="msgBubbleTimeout = setTimeout(hideMsgBubble, 120);" onclick="toggleMsgBubble(this, problemMessages[this.getAttribute(\'data-tracking\')])"></i>';
         echo '</span>';
-        echo '</td>';
-        echo '<td class="text-center"><small>' . htmlspecialchars($entry['date'] ?? '-') . '</small></td>';
-        if ($currentUser && $currentUser['role'] === 'MainAdmin') {
-            echo '<td>' . htmlspecialchars($entry['ip'] ?? '-') . '</td>';
-        }
-        echo '<td>' . htmlspecialchars($entry['adminMessage'] ?? '') . '</td>';
-        if ($currentUser && $currentUser['role'] === 'MainAdmin') {
-            echo '<td class="text-center">';
-            echo '<form method="post" onsubmit="return confirm(\'Bu arızayı silmek istediğinize emin misiniz?\');" style="display:inline-block">';
-            echo '<input type="hidden" name="delete_trackingNo" value="' . htmlspecialchars($entry['trackingNo']) . '">';
-            echo '<button type="submit" name="delete_fault" class="btn btn-danger btn-sm" title="Sil">';
-            echo '<i class="bi bi-trash"></i>';
-            echo '</button>';
-            echo '</form>';
-            echo '</td>';
-        }
+    }
+    echo '</span>';
+    echo '</td>';
+    // 7. Tarih
+    echo '<td class="text-center"><small>' . htmlspecialchars($entry['date'] ?? '-') . '</small></td>';
+    // 8. IP (sadece MainAdmin ise)
+    if ($currentUser && $currentUser['role'] === 'MainAdmin') {
+        echo '<td>' . htmlspecialchars($entry['ip'] ?? '-') . '</td>';
+    }
+    // 9. Admin Mesajı
+    echo '<td>' . htmlspecialchars($entry['adminMessage'] ?? '') . '</td>';
+    // 10. Sil (sadece MainAdmin ise)
+    if ($currentUser && $currentUser['role'] === 'MainAdmin') {
         echo '<td class="text-center">';
-        echo '<button type="button" class="btn btn-outline-info btn-sm detail-btn" onclick="openDetailCardbox(\'' . addslashes(trim((string)$entry['trackingNo'])) . '\', this, event)" title="Detaylı İncele">';
-        echo '<i class="bi bi-search"></i> Detay';
+        echo '<form method="post" onsubmit="return confirm(\'Bu arızayı silmek istediğinize emin misiniz?\');" style="display:inline-block">';
+        echo '<input type="hidden" name="delete_trackingNo" value="' . htmlspecialchars($entry['trackingNo']) . '">';
+        echo '<button type="submit" name="delete_fault" class="btn btn-danger btn-sm" title="Sil">';
+        echo '<i class="bi bi-trash"></i>';
         echo '</button>';
+        echo '</form>';
         echo '</td>';
-        echo '</tr>';
-    endforeach;
-    ?>
+    }
+    // 11. Detaylı İncele
+    echo '<td class="text-center">';
+    echo '<button type="button" class="btn btn-outline-info btn-sm detail-btn" onclick="openDetailCardbox(\'' . addslashes(trim((string)$entry['trackingNo'])) . '\', this, event)" title="Detaylı İncele">';
+    echo '<i class="bi bi-search"></i> Detay';
+    echo '</button>';
+    echo '</td>';
+    echo '</tr>';
+endforeach;
+?>
     </tbody>
     </table>
     <script>
