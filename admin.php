@@ -949,7 +949,7 @@ function openDetailCardbox(trackingNo, btn, event) {
     if (!p) return;
     let html = `<button class='close-btn' onclick='this.parentElement.remove(); openCardbox=null;'>×</button>`;
     html += `<div class='mb-2'><b>Takip No:</b> ${p.trackingNo}</div>`;
-    html += `<div class='mb-2'><b>Açıklama:</b><br><span>${p.description ?? '-'}</span></div>`;
+    html += `<div class='mb-2'><b>Detaylı Tanım:</b><br><span>${p.detailedDescription ?? '-'}</span></div>`;
     if (p.filePath && p.filePath !== '') {
         const fileName = p.filePath.split('/').pop();
         const ext = fileName.split('.').pop().toLowerCase();
