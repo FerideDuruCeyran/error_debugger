@@ -379,7 +379,7 @@ function js_safe($str) {
                 $entry['trackingNo'] = uniqid('trk_');
             }
         }
-        if (!isset($entry['detailedDescription'])) $entry['detailedDescription'] = '';
+        if (!isset($entry['description'])) $entry['description'] = '';
         if (!isset($entry['filePath'])) $entry['filePath'] = '';
     }
     unset($entry);
@@ -916,7 +916,7 @@ function openDetailCardbox(trackingNo, btn, event) {
     }
     let html = `<button class='close-btn' onclick='this.parentElement.remove(); openCardbox=null;'>×</button>`;
     html += `<div class='mb-2'><b>Takip No:</b> ${p.trackingNo}</div>`;
-    html += `<div class='mb-2'><b>Detaylı Tanım:</b><br><span>${p.detailedDescription ?? '-'}</span></div>`;
+    html += `<div class='mb-2'><b>Açıklama:</b><br><span>${p.description ?? '-'}</span></div>`;
     if (p.filePath && p.filePath !== '') {
         const fileName = p.filePath.split('/').pop();
         const ext = fileName.split('.').pop().toLowerCase();
