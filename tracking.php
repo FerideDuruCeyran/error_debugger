@@ -41,6 +41,13 @@ $subFaultTypes = [
     20 => "İnşaat Raporu"
 ];
 
+// Arıza türleri dizisi (id => isim)
+$faultTypeNames = [
+    1 => "MAKİNE/TESİSAT",
+    2 => "ELEKTRİK",
+    3 => "İNŞAAT"
+];
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $trackingNo = trim($_POST['trackingNo'] ?? '');
     if ($trackingNo === '') {
@@ -109,16 +116,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <?php if ($result): ?>
                         <h3>Arıza Bilgileri</h3>
                         <ul class="list-group mb-3">
-                            <li class="list-group-item"><b>Birim:</b> <?= htmlspecialchars($result['department']) ?></li>
-                            <li class="list-group-item"><b>Arıza Türü:</b> <span class="badge bg-<?= $faultStatusBadges[$result['status']] ?? 'secondary' ?> text-dark"><?= $faultStatuses[$result['status']] ?? $result['status'] ?></span></li>
+                            <li class="list-group-item"><b>Birim:</b> <?= htmlspecialchars($result['department'] ?? '-') ?></li>
+                            <li class="list-group-item"><b>Arıza Türü:</b> <?= htmlspecialchars($faultTypeNames[$result['faultType']] ?? $result['faultType'] ?? '-') ?></li>
                             <li class="list-group-item"><b>Alt Tür:</b> <?= htmlspecialchars($subFaultTypes[$result['subFaultType']] ?? '-') ?></li>
-                            <li class="list-group-item"><b>Tarih:</b> <span class="server-date" data-server-date="<?= htmlspecialchars($result['date']) ?>"><?= htmlspecialchars($result['date']) ?></span></li>
-                            <li class="list-group-item"><b>İletişim:</b> <i class="bi bi-telephone"></i> <?= htmlspecialchars($result['contact']) ?></li>
-                            <?php if (!empty($result['assignedTo'])): ?>
-                                <li class="list-group-item"><b>Teknisyen:</b> <?= htmlspecialchars($result['assignedTo']) ?></li>
-                            <?php endif; ?>
+                            <li class="list-group-item"><b>Durum:</b> <?= htmlspecialchars($result['status'] ?? '-') ?></li>
+                            <li class="list-group-item"><b>Tarih:</b> <span class="server-date" data-server-date="<?= htmlspecialchars($result['date'] ?? '-') ?>"><?= htmlspecialchars($result['date'] ?? '-') ?></span></li>
+                            <li class="list-group-item"><b>Açıklama:</b> <?= htmlspecialchars($result['description'] ?? '-') ?></li>
+                            <li class="list-group-item"><b>Takip No:</b> <?= htmlspecialchars($result['trackingNo'] ?? '-') ?></li>
+                            <li class="list-group-item"><b>İletişim:</b> <i class="bi bi-telephone"></i> <?php $c = $result['contact'] ?? ''; echo $c ? str_repeat('*', max(0, strlen($c)-4)) . substr($c, -4) : '-'; ?></li>
+                            <li class="list-group-item"><b>Teknisyen:</b> <?php
+                                if (!empty($result['assignedTo'])) {
+                                    echo htmlspecialchars($result['assignedTo']);
+                                } else {
+                                    echo 'Bir atama yapılmadı';
+                                }
+                            ?></li>
                             <?php if (!empty($result['filePath'])): ?>
                                 <li class="list-group-item"><b>Dosya:</b> <a href="uploads/<?= htmlspecialchars(basename($result['filePath'])) ?>" target="_blank"><i class="bi bi-file-earmark-arrow-down"></i> Dosyayı Görüntüle</a></li>
+                            <?php endif; ?>
+                            <?php /* IP bilgisi gösterilmeyecek */ ?>
+                            <?php if (!empty($result['user'])): ?>
+                                <li class="list-group-item"><b>Kullanıcı:</b> <?= htmlspecialchars($result['user']) ?></li>
                             <?php endif; ?>
                         </ul>
                     <?php endif; ?>

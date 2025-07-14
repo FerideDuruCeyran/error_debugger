@@ -120,23 +120,30 @@ if (isset($_POST['update_trackingNo'], $_POST['update_message'])) {
     }
 }
 // --- Atanan arızaları $problems dizisine aktar ---
-$problems = [];
+$date1 = $_GET['date1'] ?? '';
+$department = $_GET['department'] ?? '';
+$status = $_GET['status'] ?? '';
+
+$reports = [];
 $logFile = PROBLEM_LOG_FILE;
 if (file_exists($logFile)) {
     $lines = file($logFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    $latest = [];
     foreach ($lines as $line) {
         $entry = json_decode($line, true);
         $assignedUser = $entry['assignedTo'] ?? ($entry['assigned'] ?? null);
         if ($entry && $assignedUser && mb_strtolower(trim($assignedUser)) === mb_strtolower(trim($currentUser['username']))) {
-            if (!isset($entry['status']) || trim($entry['status']) === '') {
-                $entry['status'] = 'Bekliyor';
+            $match = true;
+            if ($date1) {
+                $entryDate = date('Y-m-d', strtotime($entry['date'] ?? ''));
+                if ($entryDate !== $date1) $match = false;
             }
-            $latest[$entry['trackingNo']] = $entry;
+            if ($department && $entry['department'] !== $department) $match = false;
+            if ($status && $entry['status'] !== $status) $match = false;
+            if ($match) $reports[] = $entry;
         }
     }
-    $problems = array_values($latest);
 }
+$problems = $reports;
 ?>
 <!DOCTYPE html>
 <html lang="tr">
@@ -393,6 +400,42 @@ body.dark-mode .form-select:focus, body.dark-mode .form-control:focus {
       </ul>
     </div>
   </div>
+  <form method="get" class="row g-3 mb-4" id="filterForm">
+    <div class="col-md-2">
+      <label class="form-label">Tarih</label>
+      <input type="date" name="date1" class="form-control" value="<?= htmlspecialchars($date1) ?>">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Birim</label>
+      <select name="department" class="form-select">
+        <option value="">Tümü</option>
+        <?php
+        $departments = [
+          "Diş Hekimliği Fakültesi", "Eczacılık Fakültesi", "Edebiyat Fakültesi", "Eğitim Fakültesi", "Fen Fakültesi", "Güzel Sanatlar Fakültesi", "Hemşirelik Fakültesi", "Hukuk Fakültesi", "İktisadi ve İdari Bilimler Fakültesi", "İlahiyat Fakültesi", "İletişim Fakültesi", "Kemer Denizcilik Fakültesi", "Kumluca Sağlık Bilimleri Fakültesi", "Hukuk Müşavirliği", "Ziraat Fakültesi", "Adalet Meslek Yüksekokulu", "Alanya Meslek Yüksekokulu", "Demre Dr. Hasan Ünal Meslek Yüksekokulu", "Elmalı Meslek Yüksekokulu", "Finike Meslek Yüksekokulu", "Gastronomi ve Mutfak Sanatları Meslek Yüksekokulu", "Korkuteli Meslek Yüksekokulu", "Kumluca Meslek Yüksekokulu", "Manavgat Meslek Yüksekokulu", "Serik Meslek Yüksekokulu", "Sosyal Bilimler Meslek Yüksekokulu", "Teknik Bilimler Meslek Yüksekokulu", "Turizm İşletmeciliği ve Otelcilik Yüksekokulu", "Antalya Devlet Konservatuvarı", "Yabancı Diller Yüksekokulu", "Akdeniz Uygarlıkları Araştırma Enstitüsü", "Eğitim Bilimleri Enstitüsü", "Fen Bilimleri Enstitüsü", "Güzel Sanatlar Enstitüsü", "Prof.Dr.Tuncer Karpuzoğlu Organ Nakli Enstitüsü", "Sağlık Bilimleri Enstitüsü", "Sosyal Bilimler Enstitüsü", "Atatürk İlkeleri ve İnkılap Tarihi Bölüm Başkanlığı", "Beden Eğitimi ve Spor Bölüm Başkanlığı", "Enformatik Bölüm Başkanlığı", "Güzel Sanatlar Bölüm Başkanlığı", "Türk Dili Bölüm Başkanlığı", "Hukuk Müşavirliği", "Kütüphane ve Dokümantasyon Daire Başkanlığı", "Öğrenci İşleri Daire Başkanlığı", "Sağlık Kültür ve Spor Daire Başkanlığı", "Strateji Geliştirme Daire Başkanlığı", "Uluslararası İlişkiler Ofisi", "Yapı İşleri ve Teknik Daire Başkanlığı", "Basın Yayın ve Halkla İlişkiler Müdürlüğü", "Döner Sermaye İşletme Müdürlüğü", "Hastane", "İdari ve Mali İşler Daire Başkanlığı", "İnsan Kaynakları Daire Başkanlığı", "Kariyer Planlama ve Mezun İzleme Uygulama ve Araştırma Merkezi", "Kütüphane ve Dokümantasyon Daire Başkanlığı", "Öğrenci İşleri Daire Başkanlığı", "Sağlık Kültür ve Spor Daire Başkanlığı", "Strateji Geliştirme Daire Başkanlığı", "Teknoloji Transfer Ofisi", "TÖMER", "Yabancı Diller Yüksekokulu", "Diğer (liste dışı birim)"
+        ];
+        foreach ($departments as $dep): ?>
+          <option value="<?= htmlspecialchars($dep) ?>" <?= $department === $dep ? 'selected' : '' ?>><?= htmlspecialchars($dep) ?></option>
+        <?php endforeach; ?>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Durum</label>
+      <select name="status" class="form-select">
+        <?php foreach ($faultStatuses as $key => $label): ?>
+          <option value="<?= $key ?>" <?= $status === $key ? 'selected' : '' ?>><?= $label ?></option>
+        <?php endforeach; ?>
+      </select>
+    </div>
+    <div class="col-md-2 align-self-end d-flex gap-2">
+      <button type="submit" class="btn btn-primary w-100">Filtrele</button>
+      <button type="button" class="btn btn-secondary w-100" onclick="resetFilters()">Filtreyi Sıfırla</button>
+    </div>
+  </form>
+  <script>
+  function resetFilters() {
+    window.location.href = window.location.pathname + '?tab=assigned';
+  }
+  </script>
 </div>
 <div class="container">
 <?php if ($tab=='assigned'): ?>
@@ -613,7 +656,7 @@ body.dark-mode .form-select:focus, body.dark-mode .form-control:focus {
       <div class="modal-body">
         <ul class="list-group">
           <?php 
-          $notifFile = 'bildirimler/notifications_' . ($_SESSION['user'] ?? '') . '.json';
+          $notifFile = 'bildirimler/notifications_' . ($currentUser['username'] ?? '') . '.json';
           $notifs = file_exists($notifFile) ? json_decode(file_get_contents($notifFile), true) : [];
           if (!empty($notifs)) {
             foreach ($notifs as $n) {

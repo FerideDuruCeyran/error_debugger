@@ -98,7 +98,7 @@ if (file_exists(PROBLEM_LOG_FILE)) {
 }
 
 $date1 = $_GET['date1'] ?? '';
-$date2 = $_GET['date2'] ?? '';
+// $date2 = $_GET['date2'] ?? '';
 $department = $_GET['department'] ?? '';
 $status = $_GET['status'] ?? '';
 
@@ -109,8 +109,10 @@ if (file_exists(PROBLEM_LOG_FILE)) {
         $entry = json_decode($line, true);
         if ($entry) {
           $match = true;
-          if ($date1 && strtotime($entry['date']) < strtotime($date1)) $match = false;
-          if ($date2 && strtotime($entry['date']) > strtotime($date2)) $match = false;
+          if ($date1) {
+              $entryDate = date('Y-m-d', strtotime($entry['date'] ?? ''));
+              if ($entryDate !== $date1) $match = false;
+          }
           if ($department && $entry['department'] !== $department) $match = false;
           if ($status && $entry['status'] !== $status) $match = false;
           if ($match) $reports[] = $entry;
@@ -453,19 +455,28 @@ body.dark-mode .form-select:focus, body.dark-mode .form-control:focus {
       </div>
     </div>
     <?php endif; ?>
-    <h2>Raporlama</h2>
-    <form method="get" class="row g-3 mb-4">
+    <form method="get" class="row g-3 mb-4" id="filterForm">
         <div class="col-md-2">
-            <label class="form-label">Tarih 1</label>
+            <label class="form-label">Tarih</label>
             <input type="date" name="date1" class="form-control" value="<?= htmlspecialchars($date1) ?>">
         </div>
-        <div class="col-md-2">
+        <!-- <div class="col-md-2">
             <label class="form-label">Tarih 2</label>
             <input type="date" name="date2" class="form-control" value="<?= htmlspecialchars($date2) ?>">
-        </div>
+        </div> -->
         <div class="col-md-3">
             <label class="form-label">Birim</label>
-            <input type="text" name="department" class="form-control" value="<?= htmlspecialchars($department) ?>">
+            <select name="department" class="form-select">
+                <option value="">Tümü</option>
+                <?php
+                // Filtre formundan hemen önce, eksiksiz birimler dizisi
+                $departments = [
+                    "Diş Hekimliği Fakültesi", "Eczacılık Fakültesi", "Edebiyat Fakültesi", "Eğitim Fakültesi", "Fen Fakültesi", "Güzel Sanatlar Fakültesi", "Hemşirelik Fakültesi", "Hukuk Fakültesi", "İktisadi ve İdari Bilimler Fakültesi", "İlahiyat Fakültesi", "İletişim Fakültesi", "Kemer Denizcilik Fakültesi", "Kumluca Sağlık Bilimleri Fakültesi", "Hukuk Müşavirliği", "Ziraat Fakültesi", "Adalet Meslek Yüksekokulu", "Alanya Meslek Yüksekokulu", "Demre Dr. Hasan Ünal Meslek Yüksekokulu", "Elmalı Meslek Yüksekokulu", "Finike Meslek Yüksekokulu", "Gastronomi ve Mutfak Sanatları Meslek Yüksekokulu", "Korkuteli Meslek Yüksekokulu", "Kumluca Meslek Yüksekokulu", "Manavgat Meslek Yüksekokulu", "Serik Meslek Yüksekokulu", "Sosyal Bilimler Meslek Yüksekokulu", "Teknik Bilimler Meslek Yüksekokulu", "Turizm İşletmeciliği ve Otelcilik Yüksekokulu", "Antalya Devlet Konservatuvarı", "Yabancı Diller Yüksekokulu", "Akdeniz Uygarlıkları Araştırma Enstitüsü", "Eğitim Bilimleri Enstitüsü", "Fen Bilimleri Enstitüsü", "Güzel Sanatlar Enstitüsü", "Prof.Dr.Tuncer Karpuzoğlu Organ Nakli Enstitüsü", "Sağlık Bilimleri Enstitüsü", "Sosyal Bilimler Enstitüsü", "Atatürk İlkeleri ve İnkılap Tarihi Bölüm Başkanlığı", "Beden Eğitimi ve Spor Bölüm Başkanlığı", "Enformatik Bölüm Başkanlığı", "Güzel Sanatlar Bölüm Başkanlığı", "Türk Dili Bölüm Başkanlığı", "Hukuk Müşavirliği", "Kütüphane ve Dokümantasyon Daire Başkanlığı", "Öğrenci İşleri Daire Başkanlığı", "Sağlık Kültür ve Spor Daire Başkanlığı", "Strateji Geliştirme Daire Başkanlığı", "Uluslararası İlişkiler Ofisi", "Yapı İşleri ve Teknik Daire Başkanlığı", "Basın Yayın ve Halkla İlişkiler Müdürlüğü", "Döner Sermaye İşletme Müdürlüğü", "Hastane", "İdari ve Mali İşler Daire Başkanlığı", "İnsan Kaynakları Daire Başkanlığı", "Kariyer Planlama ve Mezun İzleme Uygulama ve Araştırma Merkezi", "Kütüphane ve Dokümantasyon Daire Başkanlığı", "Öğrenci İşleri Daire Başkanlığı", "Sağlık Kültür ve Spor Daire Başkanlığı", "Strateji Geliştirme Daire Başkanlığı", "Teknoloji Transfer Ofisi", "TÖMER", "Yabancı Diller Yüksekokulu", "Diğer (liste dışı birim)"
+                ];
+                foreach ($departments as $dep): ?>
+                    <option value="<?= htmlspecialchars($dep) ?>" <?= $department === $dep ? 'selected' : '' ?>><?= htmlspecialchars($dep) ?></option>
+                <?php endforeach; ?>
+            </select>
         </div>
         <div class="col-md-3">
             <label class="form-label">Durum</label>
@@ -475,8 +486,9 @@ body.dark-mode .form-select:focus, body.dark-mode .form-control:focus {
 <?php endforeach; ?>
             </select>
         </div>
-        <div class="col-md-2 align-self-end">
+        <div class="col-md-2 align-self-end d-flex gap-2">
             <button type="submit" class="btn btn-primary w-100">Filtrele</button>
+            <button type="button" class="btn btn-secondary w-100" onclick="resetFilters()">Filtreyi Sıfırla</button>
         </div>
     </form>
     <h2>Tüm Arızalar ve Durumları</h2>
@@ -502,21 +514,22 @@ body.dark-mode .form-select:focus, body.dark-mode .form-control:focus {
     <tbody>
     <?php
 // Tablodan önce arıza kayıtlarını oku
-$problems = [];
-if (file_exists(PROBLEM_LOG_FILE)) {
-    $lines = file(PROBLEM_LOG_FILE, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    $latest = [];
-    foreach ($lines as $line) {
-        $entry = json_decode($line, true);
-        if ($entry && isset($entry['trackingNo'])) {
-            if (!isset($entry['status']) || trim($entry['status']) === '') {
-                $entry['status'] = 'Bekliyor';
-            }
-            $latest[$entry['trackingNo']] = $entry;
-        }
-    }
-    $problems = array_values($latest);
-}
+//$problems = [];
+//if (file_exists(PROBLEM_LOG_FILE)) {
+//    $lines = file(PROBLEM_LOG_FILE, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+//    $latest = [];
+//    foreach ($lines as $line) {
+//        $entry = json_decode($line, true);
+//        if ($entry && isset($entry['trackingNo'])) {
+//            if (!isset($entry['status']) || trim($entry['status']) === '') {
+//                $entry['status'] = 'Bekliyor';
+//            }
+//            $latest[$entry['trackingNo']] = $entry;
+//        }
+//    }
+//    $problems = array_values($latest);
+//}
+$problems = $reports;
 ?>
 <?php
 foreach ($problems as $p):
@@ -753,9 +766,13 @@ if (file_exists(PROBLEM_LOG_FILE)) {
         }
     }
 }
+// labels için isimleri kullan
+$typeLabels = array_map(function($id) use ($faultTypes) {
+    return $faultTypes[$id] ?? $id;
+}, array_keys($typeCounts));
 ?>
 const typeData = {
-  labels: <?= json_encode(array_keys($typeCounts), JSON_UNESCAPED_UNICODE) ?>,
+  labels: <?= json_encode($typeLabels, JSON_UNESCAPED_UNICODE) ?>,
   datasets: [{
     label: 'Arıza Türü',
     data: <?= json_encode(array_values($typeCounts)) ?>,
@@ -1075,6 +1092,11 @@ function closeStatusEditPopup(e) {
         document.getElementById('statusEditOverlay').style.display = 'none';
         document.getElementById('statusEditPopup').style.display = 'none';
     }
+}
+</script>
+<script>
+function resetFilters() {
+    window.location.href = window.location.pathname + '?tab=arizalar';
 }
 </script>
 <script>
