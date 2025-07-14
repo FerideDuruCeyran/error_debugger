@@ -445,7 +445,6 @@ function js_safe($str) {
     <script>
     const faultTypes = <?= json_encode($faultTypes, JSON_UNESCAPED_UNICODE) ?>;
     const problemsData = <?= json_encode($problems, JSON_UNESCAPED_UNICODE) ?>;
-    console.log('problemsData', problemsData);
     </script>
     <h2>Arıza İstatistikleri</h2>
     <?php
@@ -749,13 +748,11 @@ function js_safe($str) {
 <div id="descOverlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:9998;" onclick="closeDescPopup()"></div>
 <script>
 function showDescPopup(desc) {
-  console.log('[DEBUG] showDescPopup', desc);
   document.getElementById('descPopupContent').innerText = desc;
   document.getElementById('descPopup').style.display = 'block';
   document.getElementById('descOverlay').style.display = 'block';
 }
 function closeDescPopup() {
-  console.log('[DEBUG] closeDescPopup');
   document.getElementById('descPopup').style.display = 'none';
   document.getElementById('descOverlay').style.display = 'none';
 }
@@ -798,7 +795,6 @@ let msgBubbleEl = null;
 let openCardbox = null;
 let msgBubbleTimeout = null;
 function showMsgBubble(icon, msg) {
-  console.log('[DEBUG] showMsgBubble', msg);
   hideMsgBubble();
   msgBubbleEl = document.createElement('div');
   msgBubbleEl.className = 'msg-bubble';
@@ -817,7 +813,6 @@ function hideMsgBubble() {
   msgBubbleEl = null;
 }
 function toggleMsgBubble(icon, msg) {
-  console.log('[DEBUG] toggleMsgBubble', msg);
   if (msgBubbleEl) { hideMsgBubble(); return; }
   showMsgBubble(icon, msg);
 }
@@ -885,7 +880,6 @@ if (feedbackForm) {
 </div>
 <script>
 function closeStatusEditPopup(e) {
-    console.log('[DEBUG] closeStatusEditPopup');
     if (!e || e.target === document.getElementById('statusEditOverlay')) {
         document.getElementById('statusEditOverlay').style.display = 'none';
         document.getElementById('statusEditPopup').style.display = 'none';
@@ -895,12 +889,10 @@ function closeStatusEditPopup(e) {
 <script>
 // Global error handler
 window.onerror = function(message, source, lineno, colno, error) {
-  console.error('[GLOBAL ERROR]', message, 'at', source + ':' + lineno + ':' + colno, error);
   return false;
 };
 // Durum edit popup fonksiyonu
 function openStatusEditPopup(badgeEl, trackingNo, status, technician, message) {
-  console.log('[DEBUG] openStatusEditPopup', {trackingNo, status, technician, message});
   var popup = document.getElementById('statusEditPopup');
   var overlay = document.getElementById('statusEditOverlay');
   document.getElementById('statusEdit_trackingNo').value = trackingNo;
@@ -983,18 +975,15 @@ if (localStorage.getItem('darkMode') === '1') setDarkMode(true);
 // Modal butonları debug
 const notifBtn = document.getElementById('notifBtn');
 notifBtn && notifBtn.addEventListener('click', function() {
-  console.log('[DEBUG] Bildirim modal açılıyor');
 });
 const helpBtn = document.getElementById('helpBtn');
 helpBtn && helpBtn.addEventListener('click', function() {
-  console.log('[DEBUG] Yardım modal açılıyor');
 });
 // Toast'ları otomatik ve çarpıdan kapatılabilir yap
 var toastElList = [].slice.call(document.querySelectorAll('.toast'));
 toastElList.forEach(function (toastEl) {
   new bootstrap.Toast(toastEl, { delay: 4000 }).show();
 });
-console.log('JS loaded');
 </script>
 </body>
 </html> 

@@ -34,5 +34,4 @@ foreach ($lines as $line) {
 file_put_contents($logFile, "");
 foreach ($latest as $entry) {
     file_put_contents($logFile, json_encode($entry, JSON_UNESCAPED_UNICODE) . "\n", FILE_APPEND);
-}
-echo "problems.log temizlendi!"; 
+} 

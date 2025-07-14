@@ -4,48 +4,6 @@ require_once 'config.php';
 require_once 'log_error.php';
 
 
-// DEBUG: SSL and reCAPTCHA status
-// if (php_sapi_name() !== 'cli') {
-//     echo '<div style="background:#222;color:#fff;padding:10px;font-size:14px;">';
-//     // Check CA bundle
-//     $caPath = defined('SSL_CA_BUNDLE') ? SSL_CA_BUNDLE : '(not defined)';
-//     $caExists = (defined('SSL_CA_BUNDLE') && file_exists(SSL_CA_BUNDLE)) ? 'YES' : 'NO';
-//     echo "<b>SSL CA Bundle:</b> $caPath (Exists: $caExists)<br>";
-//     // Show reCAPTCHA keys (mask secret)
-//     $siteKey = defined('RECAPTCHA_SITE_KEY') ? RECAPTCHA_SITE_KEY : '(not defined)';
-//     $secretKey = defined('RECAPTCHA_SECRET_KEY') ? RECAPTCHA_SECRET_KEY : '(not defined)';
-//     $maskedSecret = substr($secretKey, 0, 4) . str_repeat('*', max(0, strlen($secretKey)-8)) . substr($secretKey, -4);
-//     echo "<b>reCAPTCHA Site Key:</b> $siteKey<br>";
-//     echo "<b>reCAPTCHA Secret Key:</b> $maskedSecret<br>";
-//     // Test HTTPS request to Google reCAPTCHA API
-//     $testUrl = 'https://www.google.com/recaptcha/api/siteverify';
-//     $testResult = false;
-//     if (function_exists('curl_init')) {
-//         $ch = curl_init();
-//         curl_setopt($ch, CURLOPT_URL, $testUrl);
-//         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-//         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-//         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
-//         if (defined('SSL_CA_BUNDLE')) {
-//             curl_setopt($ch, CURLOPT_CAINFO, SSL_CA_BUNDLE);
-//         }
-//         curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-//         $resp = curl_exec($ch);
-//         $err = curl_error($ch);
-//         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-//         curl_close($ch);
-//         if ($resp !== false && $code === 200) {
-//             $testResult = 'SUCCESS';
-//         } else {
-//             $testResult = 'FAIL: ' . htmlspecialchars($err);
-//         }
-//     } else {
-//         $testResult = 'cURL not available';
-//     }
-//     echo "<b>Test HTTPS to Google reCAPTCHA API:</b> $testResult";
-//     echo '</div>';
-// }
-
 // Ortak arıza durumları
 $faultStatuses = [
     'Bekliyor' => 'Bekliyor',
@@ -347,6 +305,36 @@ $page = 'fault_form';
     </div>
   </div>
 </div>
+<!-- Yardım/SSS Modal -->
+<div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="helpModalLabel"><i class="bi bi-question-circle"></i> Yardım & SSS</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Kapat"></button>
+      </div>
+      <div class="modal-body">
+        <h6>Sıkça Sorulan Sorular</h6>
+        <ul>
+          <li><b>Arıza bildirimi nasıl yapılır?</b><br>"Arıza Bildir" butonunu kullanarak formu doldurabilirsiniz.</li>
+          <li><b>Takip numaramı kaybettim, ne yapmalıyım?</b><br>İletişim bilgilerinizle birlikte destek ekibine başvurun.</li>
+          <li><b>Arıza durumunu nasıl takip ederim?</b><br>"Takip" sekmesinden takip numaranızla sorgulayabilirsiniz.</li>
+          <li><b>Şifremi unuttum, nasıl sıfırlarım?</b><br>Giriş ekranındaki "Şifremi unuttum" bağlantısını kullanın.</li>
+        </ul>
+        <hr>
+        <h6>Geri Bildirim</h6>
+        <form id="feedbackForm">
+          <div class="mb-2">
+            <label class="form-label">Görüşünüz</label>
+            <textarea class="form-control" name="feedback" rows="2" required></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm">Gönder</button>
+        </form>
+        <div id="feedbackMsg" class="mt-2"></div>
+      </div>
+    </div>
+  </div>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 // Alt arıza türleri verisi (JS'ye aktarılıyor)
@@ -397,6 +385,16 @@ if (localStorage.getItem('darkMode') === '1') setDarkMode(true);
 // Bildirimleri temizle
 function clearNotifs() {
   document.querySelector('#notifModal .list-group').innerHTML = '<li class="list-group-item text-muted">Tüm bildirimler temizlendi.</li>';
+}
+</script>
+<script>
+const feedbackForm = document.getElementById('feedbackForm');
+if (feedbackForm) {
+  feedbackForm.onsubmit = function(e) {
+    e.preventDefault();
+    document.getElementById('feedbackMsg').innerHTML = '<span class="text-success">Teşekkürler, geri bildiriminiz alındı.</span>';
+    feedbackForm.reset();
+  };
 }
 </script>
 </body>
