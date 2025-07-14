@@ -66,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $subFaultType = trim($_POST['subFaultType'] ?? '');
     $department = trim($_POST['department'] ?? '');
     $contact = trim($_POST['contact'] ?? '');
-    $detailedDescription = trim($_POST['detailedDescription'] ?? '');
+    $description = trim($_POST['detailedDescription'] ?? '');
     $date = date('Y-m-d H:i:s');
     $status = $faultStatuses['Bekliyor'];
     $trackingNo = strtoupper(substr(md5(uniqid(rand(), true)), 0, 8));
@@ -75,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($faultType === '') $missing[] = 'Arıza Türü';
     if ($department === '') $missing[] = 'Birim';
     if ($contact === '') $missing[] = 'İletişim Bilgisi';
-    if ($detailedDescription === '') $missing[] = 'Detaylı Tanımlama';
+    if ($description === '') $missing[] = 'Detaylı Tanımlama';
     if ($missing) {
         $error = 'Lütfen şu alanları doldurun: ' . implode(', ', $missing);
 
@@ -156,7 +156,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $subFaultType = trim($_POST['subFaultType'] ?? '');
         $department = trim($_POST['department'] ?? '');
         $contact = trim($_POST['contact'] ?? '');
-        $detailedDescription = trim($_POST['detailedDescription'] ?? '');
+        $description = trim($_POST['detailedDescription'] ?? '');
         $date = date('Y-m-d H:i:s');
         $status = 'Bekliyor';
         $trackingNo = strtoupper(substr(md5(uniqid(rand(), true)), 0, 8));
@@ -165,7 +165,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($faultType === '') $missing[] = 'Arıza Türü';
         if ($department === '') $missing[] = 'Birim';
         if ($contact === '') $missing[] = 'İletişim Bilgisi';
-        if ($detailedDescription === '') $missing[] = 'Detaylı Tanımlama';
+        if ($description === '') $missing[] = 'Detaylı Tanımlama';
         if ($missing) {
             $error = 'Lütfen şu alanları doldurun: ' . implode(', ', $missing);
         } else {
@@ -184,7 +184,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'status' => $status,
                 'trackingNo' => $trackingNo,
                 'contact' => $contact,
-                'detailedDescription' => $detailedDescription,
+                'description' => $description,
                 'filePath' => $filePath,
                 'userAgent' => $userAgent,
                 'ip' => $ip,
