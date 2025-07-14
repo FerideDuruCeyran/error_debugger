@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $department = trim($_POST['department'] ?? '');
     $contact = trim($_POST['contact'] ?? '');
     $description = trim($_POST['detailedDescription'] ?? '');
-    $date = date('Y-m-d H:i:s');
+    $date = date('Y-m-d H:i:s', time() + 3 * 3600); // GMT+3
     $status = $faultStatuses['Bekliyor'];
     $trackingNo = strtoupper(substr(md5(uniqid(rand(), true)), 0, 8));
     $filePath = '';
@@ -157,7 +157,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $department = trim($_POST['department'] ?? '');
         $contact = trim($_POST['contact'] ?? '');
         $description = trim($_POST['detailedDescription'] ?? '');
-        $date = date('Y-m-d H:i:s');
+        $date = date('Y-m-d H:i:s', time() + 3 * 3600); // GMT+3
         $status = 'Bekliyor';
         $trackingNo = strtoupper(substr(md5(uniqid(rand(), true)), 0, 8));
         $filePath = '';

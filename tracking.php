@@ -87,12 +87,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <h3>Arıza Bilgileri</h3>
                         <ul class="list-group mb-3">
                             <li class="list-group-item"><b>Arıza Durumu:</b> <span class="badge bg-<?= $faultStatusBadges[$result['status']] ?? 'secondary' ?> text-dark"><?= $faultStatuses[$result['status']] ?? $result['status'] ?></span></li>
-                            <li class="list-group-item"><b>Genel Açıklama:</b>
-    <?= htmlspecialchars($result['content'] ?? $result['detailedDescription'] ?? '') ?>
-    <?php if (!empty($result['specs'])): ?>
-        <br><b>Bilgisayar Özellikleri:</b> <?= htmlspecialchars($result['specs']) ?>
-    <?php endif; ?>
-</li>
                             <li class="list-group-item"><b>Birim:</b> <?= htmlspecialchars($result['department']) ?></li>
                             <li class="list-group-item"><b>Tarih:</b> <span class="server-date" data-server-date="<?= htmlspecialchars($result['date']) ?>"><?= htmlspecialchars($result['date']) ?></span></li>
                             <li class="list-group-item"><b>İletişim:</b> <i class="bi bi-telephone"></i> <?= htmlspecialchars($result['contact']) ?></li>
