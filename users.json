@@ -5,7 +5,7 @@
         "role": "MainAdmin",
         "password": "MainAdmin123!",
         "email": "mainadmin@aku.edu.tr",
-        "last_login": "2025-07-14 10:31:58",
+        "last_login": "2025-07-14 11:47:28",
         "reset_token": ""
     },
     {
@@ -14,7 +14,7 @@
         "role": "Admin",
         "password": "AltAdmin123!",
         "email": "altadmin@aku.edu.tr",
-        "last_login": "2025-07-14 09:35:13",
+        "last_login": "2025-07-14 11:13:09",
         "reset_token": ""
     },
     {
@@ -69,8 +69,8 @@
     },
     {
         "id": 8,
-        "username": "teknisyen.omer",
-        "role": "TeknikPersonel",
+        "username": "teknisyen.fatih",
+        "role": "Admin",
         "profession": "Donanım Destek Uzmanı",
         "password": "Donanim2024!",
         "email": "teknisyen.omer@aku.edu.tr",

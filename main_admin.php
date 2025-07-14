@@ -238,13 +238,32 @@ function js_safe($str) {
   cursor: pointer;
 }
 .table.detail-table { position: relative; }
-</style>
+    </style>
+    <style>
+      html, body {
+        background: #181a1b !important;
+        color: #eee;
+        transition: none !important;
+      }
+    </style>
+    <script>
+      (function() {
+        try {
+          var userPref = localStorage.getItem('darkMode');
+          if (userPref === '1') {
+            document.documentElement.classList.add('dark-mode');
+          } else if (userPref === null && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark-mode');
+          }
+        } catch(e){}
+      })();
+    </script>
 </head>
 <body class="bg-light">
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
   <div class="container-fluid">
     <a class="navbar-brand d-flex align-items-center" href="index.php">
-      <img src="https://upload.wikimedia.org/wikipedia/tr/d/dc/Akdeniz_%C3%9Cniversitesi_logosu.IMG_0838.png" class="akdeniz-logo" alt="Akdeniz Üniversitesi">
+      <img src="uploads/Akdeniz_Üniversitesi_logosu.IMG_0838.png" class="akdeniz-logo" alt="Akdeniz Üniversitesi" style="width:56px;height:56px;border-radius:50%;background:#fff;">
       <span>Akdeniz Üniversitesi</span>
     </a>
     <div class="d-flex ms-auto align-items-center gap-2">
@@ -560,13 +579,18 @@ function js_safe($str) {
     <script>
     <?php
     $typeCounts = [];
+    $faultTypeCodeToName = $faultTypes;
     if (file_exists(PROBLEM_LOG_FILE)) {
         $lines = file(PROBLEM_LOG_FILE, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
         foreach ($lines as $line) {
             $entry = json_decode($line, true);
             if ($entry) {
-                $type = $entry['faultType'] ?? '-';
-                $typeCounts[$type] = ($typeCounts[$type] ?? 0) + 1;
+                $typeRaw = $entry['faultType'] ?? '-';
+                // Kod ise isme çevir, isim ise aynen al, sonra büyük harfe çevir
+                $typeKey = isset($faultTypeCodeToName[$typeRaw])
+                    ? mb_strtoupper($faultTypeCodeToName[$typeRaw], 'UTF-8')
+                    : mb_strtoupper($typeRaw, 'UTF-8');
+                $typeCounts[$typeKey] = ($typeCounts[$typeKey] ?? 0) + 1;
             }
         }
     }
@@ -970,8 +994,18 @@ function setDarkMode(on) {
     localStorage.setItem('darkMode', '0');
   }
 }
+// Sayfa yüklenince:
+const userPref = localStorage.getItem('darkMode');
+if (userPref === '1') {
+  setDarkMode(true);
+} else if (userPref === '0') {
+  setDarkMode(false);
+} else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+  setDarkMode(true);
+} else {
+  setDarkMode(false);
+}
 darkToggle.onclick = () => setDarkMode(!document.body.classList.contains('dark-mode'));
-if (localStorage.getItem('darkMode') === '1') setDarkMode(true);
 // Modal butonları debug
 const notifBtn = document.getElementById('notifBtn');
 notifBtn && notifBtn.addEventListener('click', function() {
