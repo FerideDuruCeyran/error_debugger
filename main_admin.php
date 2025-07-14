@@ -137,6 +137,32 @@ if (isset($_POST['assign_submit'], $_POST['assign_tracking'], $_POST['assign_per
   }
 }
 
+// Main admin popup ile arıza güncelleme işlemi (durum, teknisyen, mesaj)
+if (
+    isset($_POST['update_trackingNo']) &&
+    (isset($_POST['update_status']) || isset($_POST['update_technician']) || isset($_POST['update_message']))
+) {
+    $trackingNo = $_POST['update_trackingNo'];
+    $newStatus = $_POST['update_status'] ?? '';
+    $newTechnician = $_POST['update_technician'] ?? '';
+    $newMessage = $_POST['update_message'] ?? '';
+    if (file_exists(PROBLEM_LOG_FILE)) {
+        $lines = file(PROBLEM_LOG_FILE, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        foreach ($lines as $i => $line) {
+            $entry = json_decode($line, true);
+            if ($entry && isset($entry['trackingNo']) && $entry['trackingNo'] === $trackingNo) {
+                if ($newStatus !== '') $entry['status'] = $newStatus;
+                $entry['assignedTo'] = $newTechnician;
+                $entry['message'] = $newMessage;
+                $lines[$i] = json_encode($entry, JSON_UNESCAPED_UNICODE);
+                break;
+            }
+        }
+        file_put_contents(PROBLEM_LOG_FILE, implode(PHP_EOL, $lines) . PHP_EOL);
+        $successMsg = 'Arıza başarıyla güncellendi.';
+    }
+}
+
 // Altadmin'lere atanmış arıza sayısını say
 $altadminJobCount = [];
 if (file_exists(PROBLEM_LOG_FILE)) {

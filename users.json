@@ -5,7 +5,7 @@
         "role": "MainAdmin",
         "password": "MainAdmin123!",
         "email": "mainadmin@aku.edu.tr",
-        "last_login": "2025-07-14 07:35:50",
+        "last_login": "2025-07-14 09:18:40",
         "reset_token": ""
     },
     {
@@ -14,7 +14,7 @@
         "role": "Admin",
         "password": "AltAdmin123!",
         "email": "altadmin@aku.edu.tr",
-        "last_login": "2025-07-14 07:35:39",
+        "last_login": "2025-07-14 09:18:25",
         "reset_token": ""
     },
     {
@@ -44,7 +44,7 @@
         "profession": "Elektrik Teknisyeni",
         "password": "Elektrik2024!",
         "email": "teknisyen.ayse@aku.edu.tr",
-        "last_login": "2025-07-11 21:58:22",
+        "last_login": "2025-07-14 09:15:42",
         "reset_token": ""
     },
     {
