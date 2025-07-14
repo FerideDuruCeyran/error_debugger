@@ -545,7 +545,7 @@ function js_safe($str) {
         <div class="card h-100">
           <div class="card-body text-center">
             <div class="fw-semibold">En Çok Görülen Arıza Türü</div>
-            <div class="fs-4 fw-bold"><?= htmlspecialchars($mostReportedType) ?></div>
+            <div class="fs-4 fw-bold"><?= htmlspecialchars(getFaultTypeName($mostReportedType, $faultTypes)) ?></div>
             <div class="text-muted">(<?= $mostReportedTypeCount ?> arıza)</div>
           </div>
         </div>
