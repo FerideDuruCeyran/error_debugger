@@ -188,6 +188,30 @@ function getFaultTypeName($id, $faultTypes) {
     return $faultTypes[$id] ?? $id;
 }
 
+// Add sub-fault types array for lookup
+$subFaultTypes = [
+    1 => "Temiz Su Sistemi",
+    2 => "Pis Su Sistemi",
+    3 => "Buhar Sistemi",
+    4 => "Yangın Sistemi",
+    5 => "Klima Sistemi",
+    6 => "Havalandırma",
+    7 => "Makine/Teknik",
+    8 => "Yangın Algılama",
+    9 => "Aydınlatma",
+    10 => "Enerji Dağıtım",
+    11 => "Enerji Kaynağı",
+    12 => "Kampüs Aydınlatma",
+    13 => "Elektrik Raporu",
+    14 => "Çatı/Duvar",
+    15 => "Boya",
+    16 => "Kapı/Pencere",
+    17 => "Zemin Kaplama",
+    18 => "Kaynak/Montaj",
+    19 => "Nem ve Küf",
+    20 => "İnşaat Raporu"
+];
+
 // İstatistikler için değişkenler
 $totalFaults = 0;
 $statusCounts = ['Bekliyor'=>0, 'Onaylandı'=>0, 'Tamamlandı'=>0];
@@ -495,7 +519,7 @@ if (file_exists(PROBLEM_LOG_FILE)) {
 <body class="bg-light">
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
   <div class="container-fluid">
-    <a class="navbar-brand d-flex align-items-center" href="index.php">
+    <a class="navbar-brand d-flex align-items-center" href="<?php echo htmlspecialchars($panel); ?>">
       <img src="https://upload.wikimedia.org/wikipedia/tr/d/dc/Akdeniz_%C3%9Cniversitesi_logosu.IMG_0838.png" class="akdeniz-logo" alt="Akdeniz Üniversitesi">
       <span>Akdeniz Üniversitesi</span>
     </a>
@@ -670,9 +694,10 @@ if (file_exists(PROBLEM_LOG_FILE)) {
     <table class="table table-bordered table-striped table-hover align-middle detail-table shadow-sm">
         <thead class="table-primary">
         <tr>
-            <th class="text-center"><i class="bi bi-hash"></i> Takip No</th>
-            <th class="text-center"><i class="bi bi-tag"></i> Tür</th>
             <th><i class="bi bi-building"></i> Birim</th>
+            <th class="text-center"><i class="bi bi-tag"></i> Tür</th>
+            <th class="text-center"><i class="bi bi-tag"></i> Alt Tür</th>
+            <th class="text-center"><i class="bi bi-hash"></i> Takip No</th>
             <th><i class="bi bi-card-text"></i> Açıklama</th>
             <th><i class="bi bi-telephone"></i> İletişim</th>
             <th class="text-center"><i class="bi bi-calendar"></i> Tarih</th>
@@ -695,9 +720,10 @@ if (file_exists(PROBLEM_LOG_FILE)) {
     }
     ?>
     <tr>
-        <td class="text-center fw-bold text-primary"><?= htmlspecialchars($p['trackingNo']) ?></td>
-        <td class="text-center"><span class="badge bg-secondary"><?= htmlspecialchars(getFaultTypeName($p['faultType'], $faultTypes)) ?></span></td>
         <td><i class="bi bi-building text-muted"></i> <?= htmlspecialchars($p['department']) ?></td>
+        <td class="text-center"><span class="badge bg-secondary"><?= htmlspecialchars(getFaultTypeName($p['faultType'], $faultTypes)) ?></span></td>
+        <td class="text-center"><?php $subId = $p['subFaultType'] ?? null; echo $subId && isset($subFaultTypes[$subId]) ? htmlspecialchars($subFaultTypes[$subId]) : '-'; ?></td>
+        <td class="text-center fw-bold text-primary"><?= htmlspecialchars($p['trackingNo']) ?></td>
         <td>
   <?php 
     $desc = $p['description'] ?? $p['detailedDescription'] ?? $p['content'] ?? '';
@@ -960,10 +986,14 @@ const faultTypes = <?= json_encode($faultTypes, JSON_UNESCAPED_UNICODE) ?>;
 const problemsData = <?php echo json_encode($problems, JSON_UNESCAPED_UNICODE); ?>;
 let openCardbox = null;
 function openDetailCardbox(trackingNo, btn, event) {
+    console.log('[DEBUG] openDetailCardbox called with:', trackingNo, problemsData);
     if (event) event.stopPropagation();
     if (openCardbox) openCardbox.remove();
-    const p = problemsData.find(x => x.trackingNo === trackingNo);
-    if (!p) return;
+    const p = problemsData.find(x => String(x.trackingNo).trim() === String(trackingNo).trim());
+    if (!p) {
+        alert('Detay bulunamadı: ' + trackingNo);
+        return;
+    }
     let html = `<button class='close-btn' onclick='this.parentElement.remove(); openCardbox=null;'>×</button>`;
     html += `<div class='mb-2'><b>Takip No:</b> ${p.trackingNo}</div>`;
     html += `<div class='mb-2'><b>Detaylı Tanım:</b><br><span>${p.detailedDescription ?? '-'}</span></div>`;
@@ -977,9 +1007,6 @@ function openDetailCardbox(trackingNo, btn, event) {
         }
     } else {
         html += `<div class='mb-2 text-muted'>Dosya eklenmemiş.</div>`;
-    }
-    if (p.message && p.message !== '') {
-      html += `<div class='mb-2'><b>Teknik Personel Mesajı:</b><br><span>${p.message}</span></div>`;
     }
     html += `<div class='mb-2'><b>Birim:</b> ${p.department ?? '-'}</div>`;
     html += `<div class='mb-2'><b>Arıza Türü:</b> ${faultTypes[p.faultType] ?? p.faultType}</div>`;
@@ -995,95 +1022,16 @@ function openDetailCardbox(trackingNo, btn, event) {
     card.style.left = (window.scrollX + rect.left) + 'px';
     card.style.display = 'block';
     openCardbox = card;
-}
-setTimeout(() => {
-  document.addEventListener('click', function(e) {
-      if (openCardbox && !openCardbox.contains(e.target) && !e.target.classList.contains('detail-btn')) {
+    // Cardbox dışına tıklayınca kapat (mousedown ile, bir kereye mahsus)
+    setTimeout(() => {
+      function handler(e) {
+        if (openCardbox && !openCardbox.contains(e.target) && !e.target.classList.contains('detail-btn')) {
           openCardbox.remove();
           openCardbox = null;
+          document.removeEventListener('mousedown', handler);
+        }
       }
-  });
-}, 0);
-</script>
-<!-- Açıklama popup -->
-<div id="descPopup" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); min-width:320px; max-width:90vw; background:#fff; border-radius:16px; box-shadow:0 8px 40px rgba(0,0,0,0.18); z-index:9999; padding:2.2rem 2.2rem 1.5rem 2.2rem; font-size:1.15em; line-height:1.5;">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <span style="font-size:1.25em;font-weight:600;">Açıklama</span>
-    <button class="btn btn-light btn-sm" style="opacity:0.7;font-size:1.5em;line-height:1;" onclick="closeDescPopup()">&times;</button>
-  </div>
-  <div id="descPopupContent" style="max-height:60vh; overflow:auto; word-break:break-word;"></div>
-</div>
-<div id="descOverlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:9998;" onclick="closeDescPopup()"></div>
-<script>
-function showDescPopup(desc) {
-  document.getElementById('descPopupContent').innerText = desc;
-  document.getElementById('descPopup').style.display = 'block';
-  document.getElementById('descOverlay').style.display = 'block';
-}
-function closeDescPopup() {
-  document.getElementById('descPopup').style.display = 'none';
-  document.getElementById('descOverlay').style.display = 'none';
+      document.addEventListener('mousedown', handler);
+    }, 0);
 }
 </script>
-<!-- Mesaj bubble -->
-<style>
-.msg-bubble {
-  display: block;
-  position: absolute;
-  left: 50%;
-  bottom: 120%;
-  transform: translateX(-50%);
-  min-width: 200px;
-  max-width: 340px;
-  background: #fff;
-  color: #005ca9;
-  border-radius: 10px;
-  box-shadow: 0 6px 32px rgba(0,92,169,0.18);
-  padding: 14px 18px;
-  font-size: 1.08em;
-  z-index: 1000;
-  white-space: pre-line;
-  word-break: break-word;
-  border: 1.5px solid #b6d4fa;
-}
-.msg-bubble::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 100%;
-  transform: translateX(-50%);
-  border-width: 8px;
-  border-style: solid;
-  border-color: #fff transparent transparent transparent;
-  filter: drop-shadow(0 2px 2px #b6d4fa);
-}
-</style>
-<script>
-let msgBubbleEl = null;
-let msgBubbleTimeout = null;
-function showMsgBubble(icon, msg) {
-  hideMsgBubble();
-  msgBubbleEl = document.createElement('div');
-  msgBubbleEl.className = 'msg-bubble';
-  msgBubbleEl.innerText = msg;
-  icon.parentElement.appendChild(msgBubbleEl);
-  msgBubbleEl.addEventListener('mouseenter', function() {
-    if (msgBubbleTimeout) clearTimeout(msgBubbleTimeout);
-  });
-  msgBubbleEl.addEventListener('mouseleave', function() {
-    hideMsgBubble();
-  });
-}
-function hideMsgBubble() {
-  if (msgBubbleTimeout) clearTimeout(msgBubbleTimeout);
-  if (msgBubbleEl && msgBubbleEl.parentElement) msgBubbleEl.parentElement.removeChild(msgBubbleEl);
-  msgBubbleEl = null;
-}
-function toggleMsgBubble(icon, msg) {
-  if (msgBubbleEl) { hideMsgBubble(); return; }
-  showMsgBubble(icon, msg);
-}
-const problemMessages = <?= json_encode(array_column($problems, 'message', 'trackingNo'), JSON_UNESCAPED_UNICODE) ?>;
-</script>
-</body>
-</html> 

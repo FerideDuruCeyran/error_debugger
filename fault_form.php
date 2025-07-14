@@ -262,6 +262,7 @@ $page = 'fault_form';
                             <select name="subFaultType" id="subFaultType" class="form-select">
                                 <option value="">Seçiniz</option>
                             </select>
+                            <div id="selectedSubFaultType" class="mt-2 text-muted" style="display:none;"></div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Detaylı Tanımlama</label>
@@ -343,6 +344,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const faultTypeSel = document.getElementById('faultType');
     const subBox = document.getElementById('subFaultTypeBox');
     const subSel = document.getElementById('subFaultType');
+    const selectedSubDiv = document.getElementById('selectedSubFaultType');
     function updateSubTypes() {
         const parentId = parseInt(faultTypeSel.value);
         subSel.innerHTML = '<option value="">Seçiniz</option>';
@@ -361,10 +363,23 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             subBox.style.display = 'none';
         }
+        selectedSubDiv.style.display = 'none';
+    }
+    function showSelectedSubType() {
+        const subId = parseInt(subSel.value);
+        if (!isNaN(subId) && subFaultTypes.some(sub => sub.id === subId)) {
+            const sub = subFaultTypes.find(sub => sub.id === subId);
+            selectedSubDiv.textContent = 'Seçilen Alt Tür: ' + sub.name;
+            selectedSubDiv.style.display = 'block';
+        } else {
+            selectedSubDiv.style.display = 'none';
+        }
     }
     faultTypeSel.addEventListener('change', updateSubTypes);
+    subSel.addEventListener('change', showSelectedSubType);
     // İlk yüklemede de çalışsın (edit durumunda)
     updateSubTypes();
+    showSelectedSubType();
 });
 
 // Karanlık mod toggle

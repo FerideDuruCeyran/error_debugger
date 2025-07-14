@@ -18,6 +18,29 @@ $faultStatusBadges = [
     'Tamamlandı' => 'success'
 ];
 
+$subFaultTypes = [
+    1 => "Temiz Su Sistemi",
+    2 => "Pis Su Sistemi",
+    3 => "Buhar Sistemi",
+    4 => "Yangın Sistemi",
+    5 => "Klima Sistemi",
+    6 => "Havalandırma",
+    7 => "Makine/Teknik",
+    8 => "Yangın Algılama",
+    9 => "Aydınlatma",
+    10 => "Enerji Dağıtım",
+    11 => "Enerji Kaynağı",
+    12 => "Kampüs Aydınlatma",
+    13 => "Elektrik Raporu",
+    14 => "Çatı/Duvar",
+    15 => "Boya",
+    16 => "Kapı/Pencere",
+    17 => "Zemin Kaplama",
+    18 => "Kaynak/Montaj",
+    19 => "Nem ve Küf",
+    20 => "İnşaat Raporu"
+];
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $trackingNo = trim($_POST['trackingNo'] ?? '');
     if ($trackingNo === '') {
@@ -86,12 +109,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <?php if ($result): ?>
                         <h3>Arıza Bilgileri</h3>
                         <ul class="list-group mb-3">
-                            <li class="list-group-item"><b>Arıza Durumu:</b> <span class="badge bg-<?= $faultStatusBadges[$result['status']] ?? 'secondary' ?> text-dark"><?= $faultStatuses[$result['status']] ?? $result['status'] ?></span></li>
                             <li class="list-group-item"><b>Birim:</b> <?= htmlspecialchars($result['department']) ?></li>
+                            <li class="list-group-item"><b>Arıza Türü:</b> <span class="badge bg-<?= $faultStatusBadges[$result['status']] ?? 'secondary' ?> text-dark"><?= $faultStatuses[$result['status']] ?? $result['status'] ?></span></li>
+                            <li class="list-group-item"><b>Alt Tür:</b> <?= htmlspecialchars($subFaultTypes[$result['subFaultType']] ?? '-') ?></li>
                             <li class="list-group-item"><b>Tarih:</b> <span class="server-date" data-server-date="<?= htmlspecialchars($result['date']) ?>"><?= htmlspecialchars($result['date']) ?></span></li>
                             <li class="list-group-item"><b>İletişim:</b> <i class="bi bi-telephone"></i> <?= htmlspecialchars($result['contact']) ?></li>
                             <?php if (!empty($result['assignedTo'])): ?>
-                                <li class="list-group-item"><b>Atanan Kişi:</b> <i class="bi bi-person"></i> <?= htmlspecialchars($result['assignedTo']) ?></li>
+                                <li class="list-group-item"><b>Teknisyen:</b> <?= htmlspecialchars($result['assignedTo']) ?></li>
                             <?php endif; ?>
                             <?php if (!empty($result['filePath'])): ?>
                                 <li class="list-group-item"><b>Dosya:</b> <a href="uploads/<?= htmlspecialchars(basename($result['filePath'])) ?>" target="_blank"><i class="bi bi-file-earmark-arrow-down"></i> Dosyayı Görüntüle</a></li>

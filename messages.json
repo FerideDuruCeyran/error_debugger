@@ -32,6 +32,41 @@
         "to": "mainadmin",
         "message": "vSvjipm",
         "date": "2025-07-14 12:32:23",
-        "read": false
+        "read": true
+    },
+    {
+        "from": "altadmin",
+        "to": "mainadmin",
+        "message": "silzmvilZşvm",
+        "date": "2025-07-14 12:45:20",
+        "read": true
+    },
+    {
+        "from": "mainadmin",
+        "to": "altadmin",
+        "message": "dskgna",
+        "date": "2025-07-14 12:47:16",
+        "read": true
+    },
+    {
+        "from": "altadmin",
+        "to": "teknisyen.ayse",
+        "message": "hellooo",
+        "date": "2025-07-14 12:48:52",
+        "read": true
+    },
+    {
+        "from": "mainadmin",
+        "to": "altadmin",
+        "message": "ohııhlu",
+        "date": "2025-07-14 13:18:33",
+        "read": true
+    },
+    {
+        "from": "altadmin",
+        "to": "teknisyen.ayse",
+        "message": "efFWEQWANLK",
+        "date": "2025-07-14 13:21:14",
+        "read": true
     }
 ]

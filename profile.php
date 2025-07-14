@@ -48,7 +48,7 @@ $faultStatuses = [
 <body class="bg-light">
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
   <div class="container-fluid">
-    <a class="navbar-brand d-flex align-items-center" href="index.php">
+    <a class="navbar-brand d-flex align-items-center" href="<?php echo htmlspecialchars($panel); ?>">
       <img src="https://upload.wikimedia.org/wikipedia/tr/d/dc/Akdeniz_%C3%9Cniversitesi_logosu.IMG_0838.png" class="akdeniz-logo" alt="Akdeniz Üniversitesi">
       <span>Akdeniz Üniversitesi</span>
     </a>
@@ -58,8 +58,8 @@ $faultStatuses = [
       <button class="btn-icon" id="helpBtn" title="Yardım" data-bs-toggle="modal" data-bs-target="#helpModal"><i class="bi bi-question-circle"></i></button>
       <a class="btn btn-outline-light me-2" href="fault_form.php">Arıza Bildir</a>
       <a class="btn btn-outline-light me-2" href="tracking.php">Takip</a>
-      <a class="btn btn-outline-light me-2" href="index.php"><i class="bi bi-house"></i> Ana Sayfa</a>
-      <a class="btn btn-outline-light ms-2" href="login.php">Yönetici Girişi</a>
+      <a class="btn btn-outline-light me-2" href="messages.php"><i class="bi bi-chat-dots"></i> Mesajlar</a>
+      <a class="btn btn-outline-light ms-2" href="logout.php">Çıkış</a>
     </div>
   </div>
 </nav>
@@ -329,6 +329,35 @@ if (feedbackForm) {
     feedbackForm.reset();
   };
 }
+</script>
+<script>
+(function() {
+  var notifDot = document.getElementById('notifDot');
+  var notifBtn = document.getElementById('notifBtn');
+  var notifCount = 0;
+  <?php
+  $notifFile = 'bildirimler/notifications_' . ($currentUser['username'] ?? '') . '.json';
+  $notifs = file_exists($notifFile) ? json_decode(file_get_contents($notifFile), true) : [];
+  if (!empty($notifs)) {
+      echo 'notifCount = ' . count($notifs) . ';';
+  }
+  ?>
+  if (notifDot && notifCount > 0) {
+    notifDot.classList.remove('d-none');
+    notifDot.innerText = notifCount;
+  } else if (notifDot) {
+    notifDot.classList.add('d-none');
+    notifDot.innerText = '';
+  }
+  if (notifBtn) {
+    notifBtn.addEventListener('click', function() {
+      if (notifDot) {
+        notifDot.classList.add('d-none');
+        notifDot.innerText = '';
+      }
+    });
+  }
+})();
 </script>
 </body>
 </html> 
