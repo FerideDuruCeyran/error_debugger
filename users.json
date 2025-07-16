@@ -69,8 +69,8 @@
     },
     {
         "id": 8,
-        "username": "teknisyen.omer",
-        "role": "TeknikPersonel",
+        "username": "teknisyen.fatih",
+        "role": "Admin",
         "profession": "Donanım Destek Uzmanı",
         "password": "Donanim2024!",
         "email": "teknisyen.omer@aku.edu.tr",

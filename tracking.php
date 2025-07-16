@@ -17,6 +17,34 @@ $faultStatusBadges = [
     'Onaylandı' => 'info',
     'Tamamlandı' => 'success'
 ];
+// Arıza türleri ve alt türler (isim eşlemesi için)
+$faultTypes = [
+    1 => 'MAKİNE/TESİSAT',
+    2 => 'ELEKTRİK',
+    3 => 'İNŞAAT'
+];
+$subFaultTypes = [
+    1 => 'Temiz Su Sistemi',
+    2 => 'Pis Su Sistemi',
+    3 => 'Buhar Sistemi',
+    4 => 'Yangın Sistemi',
+    5 => 'Klima Sistemi',
+    6 => 'Havalandırma',
+    7 => 'Makine/Teknik',
+    8 => 'Yangın Algılama',
+    9 => 'Aydınlatma',
+    10 => 'Enerji Dağıtım',
+    11 => 'Enerji Kaynağı',
+    12 => 'Kampüs Aydınlatma',
+    13 => 'Elektrik Raporu',
+    14 => 'Çatı/Duvar',
+    15 => 'Boya',
+    16 => 'Kapı/Pencere',
+    17 => 'Zemin Kaplama',
+    18 => 'Kaynak/Montaj',
+    19 => 'Nem ve Küf',
+    20 => 'İnşaat Raporu'
+];
 
 $subFaultTypes = [
     1 => "Temiz Su Sistemi",
@@ -78,12 +106,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Arıza Takip - Akdeniz Üniversitesi</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <style>
+    html, body {
+      background: #181a1b !important;
+      color: #eee;
+      transition: none !important;
+    }
+  </style>
+  <script>
+    (function() {
+      try {
+        var userPref = localStorage.getItem('darkMode');
+        if (userPref === '1') {
+          document.documentElement.classList.add('dark-mode');
+        } else if (userPref === null && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          document.documentElement.classList.add('dark-mode');
+        }
+      } catch(e){}
+    })();
+  </script>
 </head>
 <body class="bg-light">
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
   <div class="container-fluid">
     <a class="navbar-brand d-flex align-items-center" href="index.php">
-      <img src="https://upload.wikimedia.org/wikipedia/tr/d/dc/Akdeniz_%C3%9Cniversitesi_logosu.IMG_0838.png" class="akdeniz-logo" alt="Akdeniz Üniversitesi">
+      <img src="uploads/Akdeniz_Üniversitesi_logosu.IMG_0838.png" class="akdeniz-logo" alt="Akdeniz Üniversitesi" style="width:56px;height:56px;border-radius:50%;background:#fff;">
       Akdeniz Üniversitesi
     </a>
     <div class="d-flex ms-auto align-items-center gap-2">
@@ -132,12 +179,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 }
                             ?></li>
                             <?php if (!empty($result['filePath'])): ?>
-                                <li class="list-group-item"><b>Dosya:</b> <a href="uploads/<?= htmlspecialchars(basename($result['filePath'])) ?>" target="_blank"><i class="bi bi-file-earmark-arrow-down"></i> Dosyayı Görüntüle</a></li>
+                                <li class="list-group-item"><b>Dosya Eki:</b> <a href="uploads/<?= htmlspecialchars(basename($result['filePath'])) ?>" target="_blank"><i class="bi bi-file-earmark-arrow-down"></i> Dosyayı Görüntüle</a></li>
+                            <?php else: ?>
+                                <li class="list-group-item"><b>Dosya Eki:</b> -</li>
                             <?php endif; ?>
-                            <?php /* IP bilgisi gösterilmeyecek */ ?>
-                            <?php if (!empty($result['user'])): ?>
-                                <li class="list-group-item"><b>Kullanıcı:</b> <?= htmlspecialchars($result['user']) ?></li>
-                            <?php endif; ?>
+                            <li class="list-group-item"><b>İletişim Bilgisi:</b> <?= !empty($result['contact']) ? str_repeat('*', max(0, strlen($result['contact'])-4)) . substr($result['contact'], -4) : '-' ?></li>
+                            <li class="list-group-item"><b>Durumu:</b> <span class="badge bg-<?= $faultStatusBadges[$result['status']] ?? 'secondary' ?> text-dark"><?= $faultStatuses[$result['status']] ?? $result['status'] ?></span></li>
+                            <li class="list-group-item"><b>Tarihi:</b> <?= htmlspecialchars($result['date'] ?? '-') ?></li>
                         </ul>
                     <?php endif; ?>
                 </div>
@@ -196,6 +244,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+(function() {
+  try {
+    var userPref = localStorage.getItem('darkMode');
+    if (userPref === '1') {
+      document.documentElement.classList.add('dark-mode');
+    } else if (userPref === null && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      document.documentElement.classList.add('dark-mode');
+    }
+  } catch(e){}
+})();
 // Karanlık mod toggle
 const darkToggle = document.getElementById('darkModeToggle');
 function setDarkMode(on) {
@@ -209,8 +267,18 @@ function setDarkMode(on) {
     localStorage.setItem('darkMode', '0');
   }
 }
+// Sayfa yüklenince:
+const userPref = localStorage.getItem('darkMode');
+if (userPref === '1') {
+  setDarkMode(true);
+} else if (userPref === '0') {
+  setDarkMode(false);
+} else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+  setDarkMode(true);
+} else {
+  setDarkMode(false);
+}
 darkToggle.onclick = () => setDarkMode(!document.body.classList.contains('dark-mode'));
-if (localStorage.getItem('darkMode') === '1') setDarkMode(true);
 
 function clearNotifs() {
   document.querySelector('#notifModal .list-group').innerHTML = '<li class="list-group-item text-muted">Tüm bildirimler temizlendi.</li>';
