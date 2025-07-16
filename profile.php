@@ -77,8 +77,8 @@ $faultStatuses = [
       <button class="btn-icon" id="helpBtn" title="Yardım" data-bs-toggle="modal" data-bs-target="#helpModal"><i class="bi bi-question-circle"></i></button>
       <a class="btn btn-outline-light me-2" href="fault_form.php">Arıza Bildir</a>
       <a class="btn btn-outline-light me-2" href="tracking.php">Takip</a>
-      <a class="btn btn-outline-light me-2" href="index.php"><i class="bi bi-house"></i> Ana Sayfa</a>
-      <a class="btn btn-outline-light ms-2" href="login.php">Yönetici Girişi</a>
+      <a class="btn btn-outline-light me-2" href="messages.php"><i class="bi bi-chat-dots"></i> Mesajlar</a>
+      <a class="btn btn-outline-light ms-2" href="logout.php">Çıkış</a>
     </div>
   </div>
 </nav>
@@ -288,9 +288,17 @@ $faultStatuses = [
       </div>
       <div class="modal-body">
         <ul class="list-group">
-          <li class="list-group-item"><i class="bi bi-info-circle text-primary"></i> Hoşgeldiniz! Arıza bildirimi yapmak için yukarıdaki butonları kullanabilirsiniz.</li>
-          <li class="list-group-item"><i class="bi bi-check-circle text-success"></i> Bildirimleriniz burada görünecek.</li>
-          <li class="list-group-item"><i class="bi bi-chat-dots text-info"></i> Destek için iletişime geçebilirsiniz.</li>
+          <?php 
+          $notifFile = 'bildirimler/notifications_' . ($_SESSION['user'] ?? '') . '.json';
+          $notifs = file_exists($notifFile) ? json_decode(file_get_contents($notifFile), true) : [];
+          if (!empty($notifs)) {
+            foreach ($notifs as $n) {
+              echo '<li class="list-group-item">' . htmlspecialchars($n['msg']) . ' <span class="text-muted float-end" style="font-size:0.9em">' . htmlspecialchars($n['date']) . '</span></li>';
+            }
+          } else {
+            echo '<li class="list-group-item text-muted">Hiç bildiriminiz yok.</li>';
+          }
+          ?>
         </ul>
         <div class="text-end mt-2"><button class="btn btn-sm btn-outline-secondary" onclick="clearNotifs()">Tümünü Temizle</button></div>
       </div>
@@ -363,6 +371,35 @@ function setDarkMode(on) {
   } catch(e){}
 })();
 darkToggle.onclick = () => setDarkMode(!document.body.classList.contains('dark-mode'));
+</script>
+<script>
+(function() {
+  var notifDot = document.getElementById('notifDot');
+  var notifBtn = document.getElementById('notifBtn');
+  var notifCount = 0;
+  <?php
+  $notifFile = 'bildirimler/notifications_' . ($currentUser['username'] ?? '') . '.json';
+  $notifs = file_exists($notifFile) ? json_decode(file_get_contents($notifFile), true) : [];
+  if (!empty($notifs)) {
+      echo 'notifCount = ' . count($notifs) . ';';
+  }
+  ?>
+  if (notifDot && notifCount > 0) {
+    notifDot.classList.remove('d-none');
+    notifDot.innerText = notifCount;
+  } else if (notifDot) {
+    notifDot.classList.add('d-none');
+    notifDot.innerText = '';
+  }
+  if (notifBtn) {
+    notifBtn.addEventListener('click', function() {
+      if (notifDot) {
+        notifDot.classList.add('d-none');
+        notifDot.innerText = '';
+      }
+    });
+  }
+})();
 </script>
 </body>
 </html> 

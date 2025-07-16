@@ -28,6 +28,15 @@ if (isset($_POST['update_trackingNo'], $_POST['update_status'])) {
                 $entry['status'] = $newStatus;
                 $entry['assignedTo'] = $newTech;
                 $entry['message'] = $newMessage;
+                // Bildirim: Mesaj varsa, ilgili kişilere gönder
+                if (!empty($newMessage)) {
+                    if (!empty($entry['assignedTo'])) {
+                        addNotification($entry['assignedTo'], 'Takip No: ' . $trackingNo . ' için yeni mesaj: ' . $newMessage);
+                    }
+                    if (!empty($entry['username'])) {
+                        addNotification($entry['username'], 'Takip No: ' . $trackingNo . ' için yeni mesaj: ' . $newMessage);
+                    }
+                }
                 $lines[$i] = json_encode($entry, JSON_UNESCAPED_UNICODE);
                 break;
             }
@@ -55,6 +64,29 @@ if (isset($_POST['delete_fault'], $_POST['delete_trackingNo']) && $currentUser &
         $successMsg = 'Arıza başarıyla silindi.';
     }
 }
+
+$date1 = $_GET['date1'] ?? '';
+$department = $_GET['department'] ?? '';
+$status = $_GET['status'] ?? '';
+
+$reports = [];
+if (file_exists(PROBLEM_LOG_FILE)) {
+    $lines = file(PROBLEM_LOG_FILE, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        $entry = json_decode($line, true);
+        if ($entry) {
+            $match = true;
+            if ($date1) {
+                $entryDate = date('Y-m-d', strtotime($entry['date'] ?? ''));
+                if ($entryDate !== $date1) $match = false;
+            }
+            if ($department && $entry['department'] !== $department) $match = false;
+            if ($status && $entry['status'] !== $status) $match = false;
+            if ($match) $reports[] = $entry;
+        }
+    }
+}
+$problems = $reports;
 
 $filter = $_GET['filter'] ?? '';
 $updateMsg = '';
@@ -178,6 +210,30 @@ $faultTypes = [
 function getFaultTypeName($id, $faultTypes) {
     return $faultTypes[$id] ?? $id;
 }
+
+// Add sub-fault types array for lookup
+$subFaultTypes = [
+    1 => "Temiz Su Sistemi",
+    2 => "Pis Su Sistemi",
+    3 => "Buhar Sistemi",
+    4 => "Yangın Sistemi",
+    5 => "Klima Sistemi",
+    6 => "Havalandırma",
+    7 => "Makine/Teknik",
+    8 => "Yangın Algılama",
+    9 => "Aydınlatma",
+    10 => "Enerji Dağıtım",
+    11 => "Enerji Kaynağı",
+    12 => "Kampüs Aydınlatma",
+    13 => "Elektrik Raporu",
+    14 => "Çatı/Duvar",
+    15 => "Boya",
+    16 => "Kapı/Pencere",
+    17 => "Zemin Kaplama",
+    18 => "Kaynak/Montaj",
+    19 => "Nem ve Küf",
+    20 => "İnşaat Raporu"
+];
 
 // İstatistikler için değişkenler
 $totalFaults = 0;
@@ -546,6 +602,42 @@ if (file_exists(PROBLEM_LOG_FILE)) {
 </div>
 <?php endif; ?>
 <div class="container">
+    <form method="get" class="row g-3 mb-4" id="filterForm">
+        <div class="col-md-2">
+            <label class="form-label">Tarih</label>
+            <input type="date" name="date1" class="form-control" value="<?= htmlspecialchars($date1) ?>">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Birim</label>
+            <select name="department" class="form-select">
+                <option value="">Tümü</option>
+                <?php
+                $departments = [
+                    "Diş Hekimliği Fakültesi", "Eczacılık Fakültesi", "Edebiyat Fakültesi", "Eğitim Fakültesi", "Fen Fakültesi", "Güzel Sanatlar Fakültesi", "Hemşirelik Fakültesi", "Hukuk Fakültesi", "İktisadi ve İdari Bilimler Fakültesi", "İlahiyat Fakültesi", "İletişim Fakültesi", "Kemer Denizcilik Fakültesi", "Kumluca Sağlık Bilimleri Fakültesi", "Hukuk Müşavirliği", "Ziraat Fakültesi", "Adalet Meslek Yüksekokulu", "Alanya Meslek Yüksekokulu", "Demre Dr. Hasan Ünal Meslek Yüksekokulu", "Elmalı Meslek Yüksekokulu", "Finike Meslek Yüksekokulu", "Gastronomi ve Mutfak Sanatları Meslek Yüksekokulu", "Korkuteli Meslek Yüksekokulu", "Kumluca Meslek Yüksekokulu", "Manavgat Meslek Yüksekokulu", "Serik Meslek Yüksekokulu", "Sosyal Bilimler Meslek Yüksekokulu", "Teknik Bilimler Meslek Yüksekokulu", "Turizm İşletmeciliği ve Otelcilik Yüksekokulu", "Antalya Devlet Konservatuvarı", "Yabancı Diller Yüksekokulu", "Akdeniz Uygarlıkları Araştırma Enstitüsü", "Eğitim Bilimleri Enstitüsü", "Fen Bilimleri Enstitüsü", "Güzel Sanatlar Enstitüsü", "Prof.Dr.Tuncer Karpuzoğlu Organ Nakli Enstitüsü", "Sağlık Bilimleri Enstitüsü", "Sosyal Bilimler Enstitüsü", "Atatürk İlkeleri ve İnkılap Tarihi Bölüm Başkanlığı", "Beden Eğitimi ve Spor Bölüm Başkanlığı", "Enformatik Bölüm Başkanlığı", "Güzel Sanatlar Bölüm Başkanlığı", "Türk Dili Bölüm Başkanlığı", "Hukuk Müşavirliği", "Kütüphane ve Dokümantasyon Daire Başkanlığı", "Öğrenci İşleri Daire Başkanlığı", "Sağlık Kültür ve Spor Daire Başkanlığı", "Strateji Geliştirme Daire Başkanlığı", "Uluslararası İlişkiler Ofisi", "Yapı İşleri ve Teknik Daire Başkanlığı", "Basın Yayın ve Halkla İlişkiler Müdürlüğü", "Döner Sermaye İşletme Müdürlüğü", "Hastane", "İdari ve Mali İşler Daire Başkanlığı", "İnsan Kaynakları Daire Başkanlığı", "Kariyer Planlama ve Mezun İzleme Uygulama ve Araştırma Merkezi", "Kütüphane ve Dokümantasyon Daire Başkanlığı", "Öğrenci İşleri Daire Başkanlığı", "Sağlık Kültür ve Spor Daire Başkanlığı", "Strateji Geliştirme Daire Başkanlığı", "Teknoloji Transfer Ofisi", "TÖMER", "Yabancı Diller Yüksekokulu", "Diğer (liste dışı birim)"
+                ];
+                foreach ($departments as $dep): ?>
+                    <option value="<?= htmlspecialchars($dep) ?>" <?= $department === $dep ? 'selected' : '' ?>><?= htmlspecialchars($dep) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Durum</label>
+            <select name="status" class="form-select">
+<?php foreach ($faultStatuses as $key => $label): ?>
+<option value="<?= $key ?>" <?= $status === $key ? 'selected' : '' ?>><?= $label ?></option>
+<?php endforeach; ?>
+            </select>
+        </div>
+        <div class="col-md-2 align-self-end d-flex gap-2">
+            <button type="submit" class="btn btn-primary w-100">Filtrele</button>
+            <button type="button" class="btn btn-secondary w-100" onclick="resetFilters()">Filtreyi Sıfırla</button>
+        </div>
+    </form>
+    <script>
+    function resetFilters() {
+        window.location.href = window.location.pathname;
+    }
+    </script>
     <div class="row mb-4">
         <div class="col-md-6">
             <form method="get" class="d-flex align-items-center gap-2">
@@ -647,7 +739,7 @@ if (file_exists(PROBLEM_LOG_FILE)) {
                                             data-department="<?= htmlspecialchars($p['department']) ?>"
                                             data-type="<?= htmlspecialchars($p['faultType']) ?>"
                                             data-date="<?= htmlspecialchars($p['date']) ?>">
-                                        <?= htmlspecialchars($p['trackingNo']) ?> - <?= htmlspecialchars($p['title'] ?? $p['faultType']) ?> (<?= htmlspecialchars($p['department']) ?>)
+                                        <?= htmlspecialchars($p['trackingNo']) ?> - <?= htmlspecialchars($p['department']) ?>
                                     </option>
                                 <?php endforeach; ?>
                             <?php endif; ?>
@@ -680,11 +772,11 @@ if (file_exists(PROBLEM_LOG_FILE)) {
     <table class="table table-bordered table-striped table-hover align-middle detail-table shadow-sm">
         <thead class="table-primary">
         <tr>
-            <th class="text-center"><i class="bi bi-hash"></i> Takip No</th>
-            <th class="text-center"><i class="bi bi-tag"></i> Tür</th>
-            <th><i class="bi bi-card-heading"></i> Başlık</th>
             <th><i class="bi bi-building"></i> Birim</th>
-            <th><i class="bi bi-card-text"></i> Tanım</th>
+            <th class="text-center"><i class="bi bi-tag"></i> Tür</th>
+            <th class="text-center"><i class="bi bi-tag"></i> Alt Tür</th>
+            <th class="text-center"><i class="bi bi-hash"></i> Takip No</th>
+            <th><i class="bi bi-card-text"></i> Açıklama</th>
             <th><i class="bi bi-telephone"></i> İletişim</th>
             <th class="text-center"><i class="bi bi-calendar"></i> Tarih</th>
             <th class="text-center" style="min-width: 200px;">Durum</th>
@@ -706,16 +798,18 @@ if (file_exists(PROBLEM_LOG_FILE)) {
     }
     ?>
     <tr>
-        <td class="text-center fw-bold text-primary"><?= htmlspecialchars($p['trackingNo']) ?></td>
-        <td class="text-center"><span class="badge bg-secondary"><?= htmlspecialchars(getFaultTypeName($p['faultType'], $faultTypes)) ?></span></td>
-        <td><strong><?= htmlspecialchars($p['title'] ?? '-') ?></strong></td>
         <td><i class="bi bi-building text-muted"></i> <?= htmlspecialchars($p['department']) ?></td>
+        <td class="text-center"><span class="badge bg-secondary"><?= htmlspecialchars(getFaultTypeName($p['faultType'], $faultTypes)) ?></span></td>
+        <td class="text-center"><?php $subId = $p['subFaultType'] ?? null; echo $subId && isset($subFaultTypes[$subId]) ? htmlspecialchars($subFaultTypes[$subId]) : '-'; ?></td>
+        <td class="text-center fw-bold text-primary"><?= htmlspecialchars($p['trackingNo']) ?></td>
         <td>
-          <?php if (!empty($p['description'])): ?>
-            <span class="desc-hover" onclick="showDescPopup(`<?= htmlspecialchars(addslashes($p['description'])) ?>`)" title="<?= htmlspecialchars($p['description']) ?>">
-              <?= htmlspecialchars(mb_strimwidth($p['description'], 0, 60, '...')) ?>
-            </span>
-          <?php endif; ?>
+  <?php 
+    $desc = $p['description'] ?? $p['detailedDescription'] ?? $p['content'] ?? '';
+    if (!empty($desc)) : ?>
+    <span class="desc-hover" onclick="showDescPopup(`<?= htmlspecialchars(addslashes($desc)) ?>`)" title="<?= htmlspecialchars($desc) ?>">
+      <?= htmlspecialchars(mb_strimwidth($desc, 0, 60, '...')) ?>
+    </span>
+  <?php endif; ?>
         </td>
         <td><i class="bi bi-telephone text-muted"></i> <?= htmlspecialchars($p['contact'] ?? '-') ?></td>
         <td class="text-center"><small><?= htmlspecialchars($p['date']) ?></small></td>
@@ -865,9 +959,17 @@ function openUpdatePopup(trackingNo, status, technician, message) {
       </div>
       <div class="modal-body">
         <ul class="list-group">
-          <li class="list-group-item"><i class="bi bi-info-circle text-primary"></i> Yeni bir arıza size atandı.</li>
-          <li class="list-group-item"><i class="bi bi-check-circle text-success"></i> Bir arıza tamamlandı.</li>
-          <li class="list-group-item"><i class="bi bi-chat-dots text-info"></i> Yeni mesajınız var.</li>
+          <?php 
+          $notifFile = 'bildirimler/notifications_' . ($_SESSION['user'] ?? '') . '.json';
+          $notifs = file_exists($notifFile) ? json_decode(file_get_contents($notifFile), true) : [];
+          if (!empty($notifs)) {
+            foreach ($notifs as $n) {
+              echo '<li class="list-group-item">' . htmlspecialchars($n['msg']) . ' <span class="text-muted float-end" style="font-size:0.9em">' . htmlspecialchars($n['date']) . '</span></li>';
+            }
+          } else {
+            echo '<li class="list-group-item text-muted">Hiç bildiriminiz yok.</li>';
+          }
+          ?>
         </ul>
         <div class="text-end mt-2"><button class="btn btn-sm btn-outline-secondary" onclick="clearNotifs()">Tümünü Temizle</button></div>
       </div>
@@ -979,13 +1081,17 @@ const faultTypes = <?= json_encode($faultTypes, JSON_UNESCAPED_UNICODE) ?>;
 const problemsData = <?php echo json_encode($problems, JSON_UNESCAPED_UNICODE); ?>;
 let openCardbox = null;
 function openDetailCardbox(trackingNo, btn, event) {
+    console.log('[DEBUG] openDetailCardbox called with:', trackingNo, problemsData);
     if (event) event.stopPropagation();
     if (openCardbox) openCardbox.remove();
-    const p = problemsData.find(x => x.trackingNo === trackingNo);
-    if (!p) return;
+    const p = problemsData.find(x => String(x.trackingNo).trim() === String(trackingNo).trim());
+    if (!p) {
+        alert('Detay bulunamadı: ' + trackingNo);
+        return;
+    }
     let html = `<button class='close-btn' onclick='this.parentElement.remove(); openCardbox=null;'>×</button>`;
     html += `<div class='mb-2'><b>Takip No:</b> ${p.trackingNo}</div>`;
-    html += `<div class='mb-2'><b>Açıklama:</b><br><span>${p.description ?? '-'}</span></div>`;
+    html += `<div class='mb-2'><b>Detaylı Tanım:</b><br><span>${p.detailedDescription ?? '-'}</span></div>`;
     if (p.filePath && p.filePath !== '') {
         const fileName = p.filePath.split('/').pop();
         const ext = fileName.split('.').pop().toLowerCase();
@@ -996,9 +1102,6 @@ function openDetailCardbox(trackingNo, btn, event) {
         }
     } else {
         html += `<div class='mb-2 text-muted'>Dosya eklenmemiş.</div>`;
-    }
-    if (p.message && p.message !== '') {
-      html += `<div class='mb-2'><b>Teknik Personel Mesajı:</b><br><span>${p.message}</span></div>`;
     }
     html += `<div class='mb-2'><b>Birim:</b> ${p.department ?? '-'}</div>`;
     html += `<div class='mb-2'><b>Arıza Türü:</b> ${faultTypes[p.faultType] ?? p.faultType}</div>`;
@@ -1014,84 +1117,17 @@ function openDetailCardbox(trackingNo, btn, event) {
     card.style.left = (window.scrollX + rect.left) + 'px';
     card.style.display = 'block';
     openCardbox = card;
-}
-setTimeout(() => {
-  document.addEventListener('click', function(e) {
-      if (openCardbox && !openCardbox.contains(e.target) && !e.target.classList.contains('detail-btn')) {
+    // Cardbox dışına tıklayınca kapat (mousedown ile, bir kereye mahsus)
+    setTimeout(() => {
+      function handler(e) {
+        if (openCardbox && !openCardbox.contains(e.target) && !e.target.classList.contains('detail-btn')) {
           openCardbox.remove();
           openCardbox = null;
+          document.removeEventListener('mousedown', handler);
+        }
       }
-  });
-}, 0);
-</script>
-<!-- Açıklama popup -->
-<div id="descPopup" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); min-width:320px; max-width:90vw; background:#fff; border-radius:16px; box-shadow:0 8px 40px rgba(0,0,0,0.18); z-index:9999; padding:2.2rem 2.2rem 1.5rem 2.2rem; font-size:1.15em; line-height:1.5;">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <span style="font-size:1.25em;font-weight:600;">Açıklama</span>
-    <button class="btn btn-light btn-sm" style="opacity:0.7;font-size:1.5em;line-height:1;" onclick="closeDescPopup()">&times;</button>
-  </div>
-  <div id="descPopupContent" style="max-height:60vh; overflow:auto; word-break:break-word;"></div>
-</div>
-<div id="descOverlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:9998;" onclick="closeDescPopup()"></div>
-<script>
-function showDescPopup(desc) {
-  document.getElementById('descPopupContent').innerText = desc;
-  document.getElementById('descPopup').style.display = 'block';
-  document.getElementById('descOverlay').style.display = 'block';
-}
-function closeDescPopup() {
-  document.getElementById('descPopup').style.display = 'none';
-  document.getElementById('descOverlay').style.display = 'none';
-}
-</script>
-<!-- Mesaj bubble -->
-<style>
-.msg-bubble {
-  display: block;
-  position: absolute;
-  left: 50%;
-  bottom: 120%;
-  transform: translateX(-50%);
-  min-width: 200px;
-  max-width: 340px;
-  background: #fff;
-  color: #005ca9;
-  border-radius: 10px;
-  box-shadow: 0 6px 32px rgba(0,92,169,0.18);
-  padding: 14px 18px;
-  font-size: 1.08em;
-  z-index: 1000;
-  white-space: pre-line;
-  word-break: break-word;
-  border: 1.5px solid #b6d4fa;
-}
-.msg-bubble::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 100%;
-  transform: translateX(-50%);
-  border-width: 8px;
-  border-style: solid;
-  border-color: #fff transparent transparent transparent;
-  filter: drop-shadow(0 2px 2px #b6d4fa);
-}
-</style>
-<script>
-let msgBubbleEl = null;
-let msgBubbleTimeout = null;
-function showMsgBubble(icon, msg) {
-  hideMsgBubble();
-  msgBubbleEl = document.createElement('div');
-  msgBubbleEl.className = 'msg-bubble';
-  msgBubbleEl.innerText = msg;
-  icon.parentElement.appendChild(msgBubbleEl);
-  msgBubbleEl.addEventListener('mouseenter', function() {
-    if (msgBubbleTimeout) clearTimeout(msgBubbleTimeout);
-  });
-  msgBubbleEl.addEventListener('mouseleave', function() {
-    hideMsgBubble();
-  });
+      document.addEventListener('mousedown', handler);
+    }, 0);
 }
 function hideMsgBubble() {
   if (msgBubbleTimeout) clearTimeout(msgBubbleTimeout);

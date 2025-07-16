@@ -5,5 +5,68 @@
         "message": "selam main admin abi sorun var mı",
         "date": "2025-07-10 14:11:34",
         "read": true
+    },
+    {
+        "from": "mainadmin",
+        "to": "altadmin",
+        "message": "yok hayır",
+        "date": "2025-07-14 12:26:10",
+        "read": true
+    },
+    {
+        "from": "altadmin",
+        "to": "mainadmin",
+        "message": "merhaba",
+        "date": "2025-07-14 12:28:33",
+        "read": true
+    },
+    {
+        "from": "mainadmin",
+        "to": "altadmin",
+        "message": "hellooooo",
+        "date": "2025-07-14 12:30:38",
+        "read": true
+    },
+    {
+        "from": "altadmin",
+        "to": "mainadmin",
+        "message": "vSvjipm",
+        "date": "2025-07-14 12:32:23",
+        "read": true
+    },
+    {
+        "from": "altadmin",
+        "to": "mainadmin",
+        "message": "silzmvilZşvm",
+        "date": "2025-07-14 12:45:20",
+        "read": true
+    },
+    {
+        "from": "mainadmin",
+        "to": "altadmin",
+        "message": "dskgna",
+        "date": "2025-07-14 12:47:16",
+        "read": true
+    },
+    {
+        "from": "altadmin",
+        "to": "teknisyen.ayse",
+        "message": "hellooo",
+        "date": "2025-07-14 12:48:52",
+        "read": true
+    },
+    {
+        "from": "mainadmin",
+        "to": "altadmin",
+        "message": "ohııhlu",
+        "date": "2025-07-14 13:18:33",
+        "read": true
+    },
+    {
+        "from": "altadmin",
+        "to": "teknisyen.ayse",
+        "message": "efFWEQWANLK",
+        "date": "2025-07-14 13:21:14",
+        "read": true
     }
 ]

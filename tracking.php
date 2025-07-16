@@ -46,6 +46,36 @@ $subFaultTypes = [
     20 => 'İnşaat Raporu'
 ];
 
+$subFaultTypes = [
+    1 => "Temiz Su Sistemi",
+    2 => "Pis Su Sistemi",
+    3 => "Buhar Sistemi",
+    4 => "Yangın Sistemi",
+    5 => "Klima Sistemi",
+    6 => "Havalandırma",
+    7 => "Makine/Teknik",
+    8 => "Yangın Algılama",
+    9 => "Aydınlatma",
+    10 => "Enerji Dağıtım",
+    11 => "Enerji Kaynağı",
+    12 => "Kampüs Aydınlatma",
+    13 => "Elektrik Raporu",
+    14 => "Çatı/Duvar",
+    15 => "Boya",
+    16 => "Kapı/Pencere",
+    17 => "Zemin Kaplama",
+    18 => "Kaynak/Montaj",
+    19 => "Nem ve Küf",
+    20 => "İnşaat Raporu"
+];
+
+// Arıza türleri dizisi (id => isim)
+$faultTypeNames = [
+    1 => "MAKİNE/TESİSAT",
+    2 => "ELEKTRİK",
+    3 => "İNŞAAT"
+];
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $trackingNo = trim($_POST['trackingNo'] ?? '');
     if ($trackingNo === '') {
@@ -134,13 +164,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <h3>Arıza Bilgileri</h3>
                         <ul class="list-group mb-3">
                             <li class="list-group-item"><b>Birim:</b> <?= htmlspecialchars($result['department'] ?? '-') ?></li>
-                            <li class="list-group-item"><b>Arıza Türü:</b> <?= isset($faultTypes[$result['faultType']]) ? htmlspecialchars($faultTypes[$result['faultType']]) : htmlspecialchars($result['faultType'] ?? '-') ?></li>
-                            <li class="list-group-item"><b>Alt Arıza Türü:</b> 
-    <?= (isset($result['subFaultType']) && isset($subFaultTypes[$result['subFaultType']]) && $result['subFaultType'] !== '') 
-        ? htmlspecialchars($subFaultTypes[$result['subFaultType']]) 
-        : ((isset($result['subFaultType']) && $result['subFaultType'] !== '') ? htmlspecialchars($result['subFaultType']) : '-') ?>
-</li>
-                            <li class="list-group-item"><b>Detaylı Tanım:</b> <?= htmlspecialchars($result['description'] ?? '-') ?></li>
+                            <li class="list-group-item"><b>Arıza Türü:</b> <?= htmlspecialchars($faultTypeNames[$result['faultType']] ?? $result['faultType'] ?? '-') ?></li>
+                            <li class="list-group-item"><b>Alt Tür:</b> <?= htmlspecialchars($subFaultTypes[$result['subFaultType']] ?? '-') ?></li>
+                            <li class="list-group-item"><b>Durum:</b> <?= htmlspecialchars($result['status'] ?? '-') ?></li>
+                            <li class="list-group-item"><b>Tarih:</b> <span class="server-date" data-server-date="<?= htmlspecialchars($result['date'] ?? '-') ?>"><?= htmlspecialchars($result['date'] ?? '-') ?></span></li>
+                            <li class="list-group-item"><b>Açıklama:</b> <?= htmlspecialchars($result['description'] ?? '-') ?></li>
+                            <li class="list-group-item"><b>Takip No:</b> <?= htmlspecialchars($result['trackingNo'] ?? '-') ?></li>
+                            <li class="list-group-item"><b>İletişim:</b> <i class="bi bi-telephone"></i> <?php $c = $result['contact'] ?? ''; echo $c ? str_repeat('*', max(0, strlen($c)-4)) . substr($c, -4) : '-'; ?></li>
+                            <li class="list-group-item"><b>Teknisyen:</b> <?php
+                                if (!empty($result['assignedTo'])) {
+                                    echo htmlspecialchars($result['assignedTo']);
+                                } else {
+                                    echo 'Bir atama yapılmadı';
+                                }
+                            ?></li>
                             <?php if (!empty($result['filePath'])): ?>
                                 <li class="list-group-item"><b>Dosya Eki:</b> <a href="uploads/<?= htmlspecialchars(basename($result['filePath'])) ?>" target="_blank"><i class="bi bi-file-earmark-arrow-down"></i> Dosyayı Görüntüle</a></li>
                             <?php else: ?>
@@ -254,6 +291,32 @@ if (feedbackForm) {
     feedbackForm.reset();
   };
 }
+
+// Local time gösterimi
+function convertToLocalTime() {
+  document.querySelectorAll('.server-date').forEach(function(el) {
+    var serverDate = el.getAttribute('data-server-date');
+    if (serverDate) {
+      // Sunucu tarihi formatı: 'YYYY-MM-DD HH:mm:ss'
+      var dateParts = serverDate.split(' ');
+      if (dateParts.length === 2) {
+        var date = dateParts[0].split('-');
+        var time = dateParts[1].split(':');
+        // new Date(year, monthIndex, day, hour, minute, second)
+        var jsDate = new Date(
+          Number(date[0]),
+          Number(date[1]) - 1,
+          Number(date[2]),
+          Number(time[0]),
+          Number(time[1]),
+          Number(time[2])
+        );
+        el.textContent = jsDate.toLocaleString();
+      }
+    }
+  });
+}
+convertToLocalTime();
 </script>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 </body>

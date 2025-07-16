@@ -36,6 +36,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['to'], $_POST['message
             'read' => false
         ];
         file_put_contents($messagesFile, json_encode($messages, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+        // Bildirim ekle
+        $notifFile = 'bildirimler/notifications_' . $to . '.json';
+        $notifs = file_exists($notifFile) ? json_decode(file_get_contents($notifFile), true) : [];
+        $notifs[] = [ 'msg' => 'Yeni bir mesajınız var.', 'date' => date('Y-m-d H:i') ];
+        file_put_contents($notifFile, json_encode($notifs, JSON_UNESCAPED_UNICODE));
         header('Location: messages.php?user=' . urlencode($to));
         exit;
     }
@@ -134,13 +139,20 @@ if ($activeUser) {
     }
     ?>
     <div class="d-flex ms-auto align-items-center gap-2">
+      <?php
+      $panel = 'index.php';
+      if (isset($currentUser['role'])) {
+        if ($currentUser['role'] === 'MainAdmin') $panel = 'main_admin.php';
+        elseif ($currentUser['role'] === 'Admin') $panel = 'admin.php';
+        elseif ($currentUser['role'] === 'TeknikPersonel') $panel = 'teknik_personel.php';
+      }
+      ?>
+      <a class="btn btn-outline-light me-2" href="<?= htmlspecialchars($panel) ?>"><i class="bi bi-arrow-left"></i> Geri</a>
       <button class="btn-icon" id="darkModeToggle" title="Karanlık Mod"><i class="bi bi-moon"></i></button>
       <button class="btn-icon position-relative" id="notifBtn" title="Bildirimler" data-bs-toggle="modal" data-bs-target="#notifModal"><i class="bi bi-bell"></i></button>
       <button class="btn-icon" id="helpBtn" title="Yardım" data-bs-toggle="modal" data-bs-target="#helpModal"><i class="bi bi-question-circle"></i></button>
-      <a class="btn btn-outline-light me-2" href="fault_form.php">Arıza Bildir</a>
-      <a class="btn btn-outline-light me-2" href="tracking.php">Takip</a>
-      <a class="btn btn-outline-light me-2" href="index.php"><i class="bi bi-house"></i> Ana Sayfa</a>
-      <a class="btn btn-outline-light ms-2" href="login.php">Yönetici Girişi</a>
+      <a class="btn btn-outline-light me-2" href="messages.php"><i class="bi bi-chat-dots"></i> Mesajlar</a>
+      <a class="btn btn-outline-light ms-2" href="logout.php">Çıkış</a>
     </div>
   </div>
 </nav>
@@ -218,9 +230,17 @@ if ($activeUser) {
       </div>
       <div class="modal-body">
         <ul class="list-group">
-          <li class="list-group-item"><i class="bi bi-info-circle text-primary"></i> Hoşgeldiniz! Arıza bildirimi yapmak için yukarıdaki butonları kullanabilirsiniz.</li>
-          <li class="list-group-item"><i class="bi bi-check-circle text-success"></i> Bildirimleriniz burada görünecek.</li>
-          <li class="list-group-item"><i class="bi bi-chat-dots text-info"></i> Destek için iletişime geçebilirsiniz.</li>
+          <?php 
+          $notifFile = 'bildirimler/notifications_' . ($_SESSION['user'] ?? '') . '.json';
+          $notifs = file_exists($notifFile) ? json_decode(file_get_contents($notifFile), true) : [];
+          if (!empty($notifs)) {
+            foreach ($notifs as $n) {
+              echo '<li class="list-group-item">' . htmlspecialchars($n['msg']) . ' <span class="text-muted float-end" style="font-size:0.9em">' . htmlspecialchars($n['date']) . '</span></li>';
+            }
+          } else {
+            echo '<li class="list-group-item text-muted">Hiç bildiriminiz yok.</li>';
+          }
+          ?>
         </ul>
         <div class="text-end mt-2"><button class="btn btn-sm btn-outline-secondary" onclick="clearNotifs()">Tümünü Temizle</button></div>
       </div>
@@ -295,6 +315,7 @@ if (feedbackForm) {
     feedbackForm.reset();
   };
 }
+// Navbar'da bildirim noktası ve sayı
 </script>
 </body>
 </html> 

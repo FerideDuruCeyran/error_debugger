@@ -21,13 +21,12 @@ body {
     align-items: center;
 }
 .navbar .akdeniz-logo {
-    width: 56px;
-    height: 56px;
-    margin: 0 12px 0 0;
-    border-radius: 12px;
-    border: 2.5px solid #0d6efd;
-    background: #fff;
-    box-shadow: 0 2px 8px rgba(0,92,169,0.10);
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #0d6efd;
+    border: 2px solid #fff;
 }
 .navbar .btn-outline-light {
     border-width: 2px;
