@@ -346,104 +346,6 @@ body.dark-mode .detail-cardbox .close-btn:hover {
         } catch(e){}
       })();
     </script>
-.table-striped > tbody > tr:nth-of-type(odd) {
-  background-color: #f8f9fa;
-}
-.table-hover tbody tr:hover {
-  background-color: #e3f0fa;
-  transition: background 0.2s;
-}
-.table th {
-  background: linear-gradient(135deg, #0d6efd, #0b5ed7);
-  color: white;
-  font-weight: 600;
-  border: none;
-  padding: 12px 8px;
-}
-.table td {
-  padding: 12px 8px;
-  vertical-align: middle;
-}
-.badge {
-  font-size: 0.85em;
-  padding: 0.4em 0.7em;
-  border-radius: 0.6em;
-  font-weight: 500;
-}
-.btn-group .btn {
-  border-radius: 0.5em;
-  margin: 0 1px;
-}
-.btn-primary, .btn-outline-info, .btn-danger, .btn-success {
-  transition: all 0.2s ease;
-}
-.btn-primary:hover, .btn-outline-info:hover, .btn-danger:hover, .btn-success:hover {
-  box-shadow: 0 3px 10px rgba(0,0,0,0.15);
-  transform: translateY(-1px);
-}
-.form-select, .form-control {
-  border-radius: 0.7em;
-  border: 1.5px solid #b6d4fe;
-  transition: all 0.2s ease;
-}
-.form-select:focus, .form-control:focus {
-  border-color: #0d6efd;
-  box-shadow: 0 0 0 0.15rem rgba(13,110,253,.15);
-  transform: translateY(-1px);
-}
-.card {
-  border-radius: 12px;
-  border: none;
-  transition: all 0.2s ease;
-}
-.card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
-}
-body.dark-mode .table-striped > tbody > tr:nth-of-type(odd) {
-  background-color: #23272b;
-}
-body.dark-mode .table-hover tbody tr:hover {
-  background-color: #1a1d20;
-}
-body.dark-mode .form-select, body.dark-mode .form-control {
-  background: #23272b;
-  color: #fff;
-  border-color: #495057;
-}
-body.dark-mode .form-select:focus, body.dark-mode .form-control:focus {
-  border-color: #0d6efd;
-  box-shadow: 0 0 0 0.15rem rgba(13,110,253,.25);
-}
-.status-editable {
-  cursor: pointer;
-  display: inline-block;
-  vertical-align: middle;
-}
-.status-editable .badge {
-  font-size: 1.08em;
-  padding: 0.55em 1.1em 0.55em 1.1em;
-  border-radius: 1.2em;
-  font-weight: 600;
-  box-shadow: 0 2px 8px rgba(13,110,253,0.08);
-  letter-spacing: 0.01em;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4em;
-  transition: background 0.18s, color 0.18s;
-}
-.status-editable .edit-icon {
-  font-size: 1.08em;
-  color: #0d6efd;
-  opacity: 0.55;
-  margin-left: 0.18em;
-  transition: color 0.18s, opacity 0.18s;
-  vertical-align: middle;
-}
-.status-editable:hover .edit-icon {
-  color: #005ca9;
-  opacity: 1;
-}
 </style>
 </head>
 <body class="bg-light">
@@ -1308,7 +1210,9 @@ function resetFilters() {
 </script>
 <script>
 function toggleFields() {
-    var role = document.getElementById('role').value;
+    var roleEl = document.getElementById('role');
+    if (!roleEl) return;
+    var role = roleEl.value;
     var departmentField = document.getElementById('departmentField');
     var adminField = document.getElementById('adminField');
     if (role === 'Admin') {
@@ -1322,7 +1226,10 @@ function toggleFields() {
         adminField.style.display = 'none';
     }
 }
-document.getElementById('role').addEventListener('change', toggleFields);
+var roleEl = document.getElementById('role');
+if (roleEl) {
+  roleEl.addEventListener('change', toggleFields);
+}
 document.addEventListener('DOMContentLoaded', toggleFields);
 function fillTechDepartment() {
     var adminSelect = document.getElementById('manager_id');

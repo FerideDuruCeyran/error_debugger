@@ -205,3 +205,8 @@ body.dark .form-select {
   color: #e0e0e0 !important;
   border-color: #444 !important;
 } 
+
+.status-editable { cursor: pointer; display: inline-block; vertical-align: middle; }
+.status-editable .badge { font-size: 1.08em; padding: 0.55em 1.1em 0.55em 1.1em; border-radius: 1.2em; font-weight: 600; box-shadow: 0 2px 8px rgba(13,110,253,0.08); letter-spacing: 0.01em; display: inline-flex; align-items: center; gap: 0.4em; transition: background 0.18s, color 0.18s; }
+.status-editable .edit-icon { font-size: 1.08em; color: #0d6efd; opacity: 0.55; margin-left: 0.18em; transition: color 0.18s, opacity 0.18s; vertical-align: middle; }
+.status-editable:hover .edit-icon { color: #005ca9; opacity: 1; } 
