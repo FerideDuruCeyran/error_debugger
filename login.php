@@ -24,9 +24,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         file_put_contents($usersFile, json_encode($users, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
         // Role göre yönlendirme
-        if ($foundUser['role'] === 'MainAdmin') {
+        if ($foundUser['role'] === 'MainAdmin' || $foundUser['role'] === 'GenelAdmin') {
             header('Location: main_admin.php');
-        } elseif ($foundUser['role'] === 'Admin') {
+        } elseif ($foundUser['role'] === 'Admin' || $foundUser['role'] === 'AltAdmin') {
             header('Location: admin.php');
         } elseif ($foundUser['role'] === 'TeknikPersonel') {
             header('Location: teknik_personel.php');
@@ -62,12 +62,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="card-body">
                 <form method="post">
                     <div class="mb-3">
-                        <label class="form-label">Kullanıcı Adı</label>
-                        <input type="text" name="username" class="form-control" required autofocus placeholder="kullanici">
+                        <label class="form-label" for="username">Kullanıcı Adı</label>
+                        <input type="text" name="username" id="username" class="form-control" required autofocus placeholder="kullanici">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Şifre</label>
-                        <input type="password" name="password" class="form-control" required>
+                        <label class="form-label" for="password">Şifre</label>
+                        <input type="password" name="password" id="password" class="form-control" required>
                     </div>
                     <?php if ($error): ?>
                         <div class="alert alert-danger"> <?= htmlspecialchars($error) ?> </div>

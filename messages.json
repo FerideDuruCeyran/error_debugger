@@ -56,17 +56,38 @@
         "read": true
     },
     {
-        "from": "mainadmin",
-        "to": "altadmin",
-        "message": "ohııhlu",
-        "date": "2025-07-14 13:18:33",
-        "read": true
-    },
-    {
         "from": "altadmin",
         "to": "teknisyen.ayse",
         "message": "efFWEQWANLK",
         "date": "2025-07-14 13:21:14",
+        "read": true
+    },
+    {
+        "from": "mainadmin",
+        "to": "altadmin",
+        "message": "test",
+        "date": "2025-07-14 14:43:09",
+        "read": true
+    },
+    {
+        "from": "altadmin",
+        "to": "mainadmin",
+        "message": "test 2",
+        "date": "2025-07-14 14:43:40",
+        "read": true
+    },
+    {
+        "from": "mainadmin",
+        "to": "altadmin",
+        "message": "esss",
+        "date": "2025-07-14 14:43:55",
+        "read": false
+    },
+    {
+        "from": "teknikservis_mudur",
+        "to": "elektrik_mudur",
+        "message": "merhaba",
+        "date": "2025-07-17 10:59:29",
         "read": true
     }
 ]

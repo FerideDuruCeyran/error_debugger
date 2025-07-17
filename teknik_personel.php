@@ -56,6 +56,14 @@ $subFaultTypes = [
 function getSubFaultTypeName($id, $subFaultTypes) {
     return $subFaultTypes[$id] ?? $id;
 }
+// Bildirim işlemleri için fonksiyon (admin.php ile aynı)
+function addNotification($user, $msg) {
+    $file = 'bildirimler/notifications_' . $user . '.json';
+    if (!is_dir('bildirimler')) mkdir('bildirimler');
+    $list = file_exists($file) ? json_decode(file_get_contents($file), true) : [];
+    $list[] = [ 'msg' => $msg, 'date' => date('Y-m-d H:i') ];
+    file_put_contents($file, json_encode($list, JSON_UNESCAPED_UNICODE));
+}
 // --- GÜNCELLEME İŞLEMİ ---
 $successMsg = $errorMsg = '';
 // Bildirim gösterimi (admin.php'deki gibi)
@@ -111,7 +119,9 @@ if (isset($_POST['update_trackingNo'], $_POST['update_message'])) {
         }
         file_put_contents(PROBLEM_LOG_FILE, implode("\n", $lines) . "\n");
         if ($updated) {
-            $successMsg = 'Mesaj ve durum başarıyla güncellendi.';
+            // $successMsg = 'Mesaj ve durum başarıyla güncellendi.';
+            header('Location: teknik_personel.php?tab=assigned');
+            exit;
         } else {
             $errorMsg = 'Güncelleme başarısız. Kayıt bulunamadı veya yetkiniz yok.';
         }
@@ -419,12 +429,12 @@ body.dark-mode .form-select:focus, body.dark-mode .form-control:focus {
   </div>
   <form method="get" class="row g-3 mb-4" id="filterForm">
     <div class="col-md-2">
-      <label class="form-label">Tarih</label>
-      <input type="date" name="date1" class="form-control" value="<?= htmlspecialchars($date1) ?>">
+      <label class="form-label" for="date1">Tarih</label>
+      <input type="date" name="date1" id="date1" class="form-control" value="<?= htmlspecialchars($date1) ?>">
     </div>
     <div class="col-md-3">
-      <label class="form-label">Birim</label>
-      <select name="department" class="form-select">
+      <label class="form-label" for="department">Birim</label>
+      <select name="department" id="department" class="form-select">
         <option value="">Tümü</option>
         <?php
         $departments = [
@@ -436,8 +446,8 @@ body.dark-mode .form-select:focus, body.dark-mode .form-control:focus {
       </select>
     </div>
     <div class="col-md-3">
-      <label class="form-label">Durum</label>
-      <select name="status" class="form-select">
+      <label class="form-label" for="status">Durum</label>
+      <select name="status" id="status" class="form-select">
         <?php foreach ($faultStatuses as $key => $label): ?>
           <option value="<?= $key ?>" <?= $status === $key ? 'selected' : '' ?>><?= $label ?></option>
         <?php endforeach; ?>

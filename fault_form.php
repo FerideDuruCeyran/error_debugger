@@ -11,40 +11,9 @@ $faultStatuses = [
     'Tamamlandı' => 'Tamamlandı'
 ];
 
-
-// Birimler (görselden alınan örnekler)
-$departments = [
-    "Diş Hekimliği Fakültesi", "Eczacılık Fakültesi", "Edebiyat Fakültesi", "Eğitim Fakültesi", "Fen Fakültesi", "Güzel Sanatlar Fakültesi", "Hemşirelik Fakültesi", "Hukuk Fakültesi", "İktisadi ve İdari Bilimler Fakültesi", "İlahiyat Fakültesi", "İletişim Fakültesi", "Kemer Denizcilik Fakültesi", "Kumluca Sağlık Bilimleri Fakültesi", "Hukuk Müşavirliği", "Ziraat Fakültesi", "Adalet Meslek Yüksekokulu", "Alanya Meslek Yüksekokulu", "Demre Dr. Hasan Ünal Meslek Yüksekokulu", "Elmalı Meslek Yüksekokulu", "Finike Meslek Yüksekokulu", "Gastronomi ve Mutfak Sanatları Meslek Yüksekokulu", "Korkuteli Meslek Yüksekokulu", "Kumluca Meslek Yüksekokulu", "Manavgat Meslek Yüksekokulu", "Serik Meslek Yüksekokulu", "Sosyal Bilimler Meslek Yüksekokulu", "Teknik Bilimler Meslek Yüksekokulu", "Turizm İşletmeciliği ve Otelcilik Yüksekokulu", "Antalya Devlet Konservatuvarı", "Yabancı Diller Yüksekokulu", "Akdeniz Uygarlıkları Araştırma Enstitüsü", "Eğitim Bilimleri Enstitüsü", "Fen Bilimleri Enstitüsü", "Güzel Sanatlar Enstitüsü", "Prof.Dr.Tuncer Karpuzoğlu Organ Nakli Enstitüsü", "Sağlık Bilimleri Enstitüsü", "Sosyal Bilimler Enstitüsü", "Atatürk İlkeleri ve İnkılap Tarihi Bölüm Başkanlığı", "Beden Eğitimi ve Spor Bölüm Başkanlığı", "Enformatik Bölüm Başkanlığı", "Güzel Sanatlar Bölüm Başkanlığı", "Türk Dili Bölüm Başkanlığı", "Hukuk Müşavirliği", "Kütüphane ve Dokümantasyon Daire Başkanlığı", "Öğrenci İşleri Daire Başkanlığı", "Sağlık Kültür ve Spor Daire Başkanlığı", "Strateji Geliştirme Daire Başkanlığı", "Uluslararası İlişkiler Ofisi", "Yapı İşleri ve Teknik Daire Başkanlığı", "Basın Yayın ve Halkla İlişkiler Müdürlüğü", "Döner Sermaye İşletme Müdürlüğü", "Hastane", "İdari ve Mali İşler Daire Başkanlığı", "İnsan Kaynakları Daire Başkanlığı", "Kariyer Planlama ve Mezun İzleme Uygulama ve Araştırma Merkezi", "Kütüphane ve Dokümantasyon Daire Başkanlığı", "Öğrenci İşleri Daire Başkanlığı", "Sağlık Kültür ve Spor Daire Başkanlığı", "Strateji Geliştirme Daire Başkanlığı", "Teknoloji Transfer Ofisi", "TÖMER", "Yabancı Diller Yüksekokulu", "Diğer (liste dışı birim)"
-];
-
-// Arıza türleri ve alt türler (örnekler)
-$faultTypes = [
-    ["id"=>1, "name"=>"MAKİNE/TESİSAT"],
-    ["id"=>2, "name"=>"ELEKTRİK"],
-    ["id"=>3, "name"=>"İNŞAAT"]
-];
-$subFaultTypes = [
-    ["id"=>1, "name"=>"Temiz Su Sistemi", "parent_id"=>1],
-    ["id"=>2, "name"=>"Pis Su Sistemi", "parent_id"=>1],
-    ["id"=>3, "name"=>"Buhar Sistemi", "parent_id"=>1],
-    ["id"=>4, "name"=>"Yangın Sistemi", "parent_id"=>1],
-    ["id"=>5, "name"=>"Klima Sistemi", "parent_id"=>1],
-    ["id"=>6, "name"=>"Havalandırma", "parent_id"=>1],
-    ["id"=>7, "name"=>"Makine/Teknik", "parent_id"=>1],
-    ["id"=>8, "name"=>"Yangın Algılama", "parent_id"=>2],
-    ["id"=>9, "name"=>"Aydınlatma", "parent_id"=>2],
-    ["id"=>10, "name"=>"Enerji Dağıtım", "parent_id"=>2],
-    ["id"=>11, "name"=>"Enerji Kaynağı", "parent_id"=>2],
-    ["id"=>12, "name"=>"Kampüs Aydınlatma", "parent_id"=>2],
-    ["id"=>13, "name"=>"Elektrik Raporu", "parent_id"=>2],
-    ["id"=>14, "name"=>"Çatı/Duvar", "parent_id"=>3],
-    ["id"=>15, "name"=>"Boya", "parent_id"=>3],
-    ["id"=>16, "name"=>"Kapı/Pencere", "parent_id"=>3],
-    ["id"=>17, "name"=>"Zemin Kaplama", "parent_id"=>3],
-    ["id"=>18, "name"=>"Kaynak/Montaj", "parent_id"=>3],
-    ["id"=>19, "name"=>"Nem ve Küf", "parent_id"=>3],
-    ["id"=>20, "name"=>"İnşaat Raporu", "parent_id"=>3]
-];
+// Dinamik tür ve alt türler
+$typesFile = 'types.json';
+$types = file_exists($typesFile) ? json_decode(file_get_contents($typesFile), true) : [];
 
 $success = false;
 $error = '';
@@ -62,9 +31,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Lütfen "Ben robot değilim" kutucuğunu işaretleyin.';
     }
 
-    $faultType = trim($_POST['faultType'] ?? '');
-    $subFaultType = trim($_POST['subFaultType'] ?? '');
     $department = trim($_POST['department'] ?? '');
+    $subFaultType = trim($_POST['subFaultType'] ?? '');
     $contact = trim($_POST['contact'] ?? '');
     $description = trim($_POST['detailedDescription'] ?? '');
     $date = date('Y-m-d H:i:s', time() + 3 * 3600); // GMT+3
@@ -72,8 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $trackingNo = strtoupper(substr(md5(uniqid(rand(), true)), 0, 8));
     $filePath = '';
     $missing = [];
-    if ($faultType === '') $missing[] = 'Arıza Türü';
-    if ($department === '') $missing[] = 'Birim';
+    if ($department === '') $missing[] = 'Birim/Tür';
     if ($contact === '') $missing[] = 'İletişim Bilgisi';
     if ($description === '') $missing[] = 'Detaylı Tanımlama';
     if ($missing) {
@@ -152,23 +119,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Continue with form processing only if reCAPTCHA passed
         if (empty($error)) {
-        $faultType = trim($_POST['faultType'] ?? '');
-        $subFaultType = trim($_POST['subFaultType'] ?? '');
-        $department = trim($_POST['department'] ?? '');
-        $contact = trim($_POST['contact'] ?? '');
-        $description = trim($_POST['detailedDescription'] ?? '');
-        $date = date('Y-m-d H:i:s', time() + 3 * 3600); // GMT+3
-        $status = 'Bekliyor';
-        $trackingNo = strtoupper(substr(md5(uniqid(rand(), true)), 0, 8));
-        $filePath = '';
-        $missing = [];
-        if ($faultType === '') $missing[] = 'Arıza Türü';
-        if ($department === '') $missing[] = 'Birim';
-        if ($contact === '') $missing[] = 'İletişim Bilgisi';
-        if ($description === '') $missing[] = 'Detaylı Tanımlama';
-        if ($missing) {
-            $error = 'Lütfen şu alanları doldurun: ' . implode(', ', $missing);
-        } else {
             if (isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK) {
                 $uploadDir = __DIR__ . '/uploads/';
                 if (!is_dir($uploadDir)) mkdir($uploadDir);
@@ -176,10 +126,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $filePath = $uploadDir . $trackingNo . '_' . $fileName;
                 move_uploaded_file($_FILES['file']['tmp_name'], $filePath);
             }
+            // Arıza türüne göre ilgili müdürü bul
+            $assigned_admin_id = null;
+            if ($department && isset($types[$department])) {
+                $target_department = $department;
+                $users = json_decode(file_get_contents('users.json'), true);
+                foreach ($users as $user) {
+                    if (($user['role'] === 'AltAdmin' || $user['role'] === 'Mudur') && $user['department'] === $target_department) {
+                        $assigned_admin_id = $user['id'];
+                        break;
+                    }
+                }
+            }
             $entry = [
-                'faultType' => $faultType,
-                'subFaultType' => $subFaultType,
                 'department' => $department,
+                'subFaultType' => $subFaultType,
                 'date' => $date,
                 'status' => $status,
                 'trackingNo' => $trackingNo,
@@ -188,11 +149,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'filePath' => $filePath,
                 'userAgent' => $userAgent,
                 'ip' => $ip,
-                'user' => 'anonim'
+                'user' => 'anonim',
+                'assigned_admin_id' => $assigned_admin_id
             ];
             log_problem($entry);
             $success = true;
-        }
         }
     }
 }
@@ -259,41 +220,39 @@ $page = 'fault_form';
                     <?php endif; ?>
                     <form method="post" enctype="multipart/form-data">
                         <div class="mb-3">
-                            <label class="form-label">Birim</label>
-                            <select name="department" class="form-select" required>
+                            <label class="form-label" for="department">Birim/Tür</label>
+                            <select name="department" id="department" class="form-select" required>
                                 <option value="">Seçiniz</option>
-                                <?php foreach ($departments as $dep): ?>
-                                    <option value="<?= htmlspecialchars($dep) ?>" <?= (isset($_POST['department']) && $_POST['department']==$dep)?'selected':'' ?>><?= htmlspecialchars($dep) ?></option>
+                                <?php foreach ($types as $type => $subs): ?>
+                                  <option value="<?= htmlspecialchars($type) ?>" <?= (isset($_POST['department']) && $_POST['department']==$type)?'selected':'' ?>><?= htmlspecialchars($type) ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Arıza Türü</label>
-                            <select name="faultType" id="faultType" class="form-select" required>
-                                <option value="">Seçiniz</option>
-                                <?php foreach ($faultTypes as $ft): ?>
-                                    <option value="<?= $ft['id'] ?>" <?= (isset($_POST['faultType']) && $_POST['faultType']==$ft['id'])?'selected':'' ?>><?= htmlspecialchars($ft['name']) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div class="mb-3" id="subFaultTypeBox" style="display:none;">
-                            <label class="form-label">Alt Arıza Türü</label>
+                        <div class="mb-3" id="subFaultTypeBox">
+                            <label class="form-label" for="subFaultType">Alt Tür</label>
                             <select name="subFaultType" id="subFaultType" class="form-select">
                                 <option value="">Seçiniz</option>
+                                <?php
+                                $selectedType = $_POST['department'] ?? '';
+                                if ($selectedType && isset($types[$selectedType])) {
+                                  foreach ($types[$selectedType] as $sub) {
+                                    echo '<option value="'.htmlspecialchars($sub).'"'.((isset($_POST['subFaultType']) && $_POST['subFaultType']==$sub)?' selected':'').'>'.htmlspecialchars($sub).'</option>';
+                                  }
+                                }
+                                ?>
                             </select>
-                            <div id="selectedSubFaultType" class="mt-2 text-muted" style="display:none;"></div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Detaylı Tanımlama</label>
-                            <textarea name="detailedDescription" class="form-control" rows="4" placeholder="Arızanın tüm detaylarını, varsa bilgisayar veya ekipman özelliklerini, gözlemlerinizi ve açıklamalarınızı buraya yazınız." required><?= htmlspecialchars($_POST['detailedDescription'] ?? '') ?></textarea>
+                            <label class="form-label" for="detailedDescription">Detaylı Tanımlama</label>
+                            <textarea name="detailedDescription" id="detailedDescription" class="form-control" rows="4" placeholder="Arızanın tüm detaylarını, varsa bilgisayar veya ekipman özelliklerini, gözlemlerinizi ve açıklamalarınızı buraya yazınız." required><?= htmlspecialchars($_POST['detailedDescription'] ?? '') ?></textarea>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Dosya Ekle</label>
-                            <input type="file" name="file" class="form-control">
+                            <label class="form-label" for="file">Dosya Ekle</label>
+                            <input type="file" name="file" id="file" class="form-control">
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">İletişim Bilgisi</label>
-                            <input type="text" name="contact" class="form-control" value="<?= htmlspecialchars($_POST['contact'] ?? '') ?>" required>
+                            <label class="form-label" for="contact">İletişim Bilgisi</label>
+                            <input type="text" name="contact" id="contact" class="form-control" value="<?= htmlspecialchars($_POST['contact'] ?? '') ?>" required>
                         </div>
                         <div class="mb-3">
                             <div class="g-recaptcha" data-sitekey="<?= RECAPTCHA_SITE_KEY ?>"></div>
@@ -345,8 +304,8 @@ $page = 'fault_form';
         <h6>Geri Bildirim</h6>
         <form id="feedbackForm">
           <div class="mb-2">
-            <label class="form-label">Görüşünüz</label>
-            <textarea class="form-control" name="feedback" rows="2" required></textarea>
+            <label class="form-label" for="feedback">Görüşünüz</label>
+            <textarea class="form-control" name="feedback" id="feedback" rows="2" required></textarea>
           </div>
           <button type="submit" class="btn btn-primary btn-sm">Gönder</button>
         </form>
@@ -357,50 +316,6 @@ $page = 'fault_form';
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-// Alt arıza türleri verisi (JS'ye aktarılıyor)
-const subFaultTypes = <?= json_encode($subFaultTypes, JSON_UNESCAPED_UNICODE) ?>;
-document.addEventListener('DOMContentLoaded', function() {
-    const faultTypeSel = document.getElementById('faultType');
-    const subBox = document.getElementById('subFaultTypeBox');
-    const subSel = document.getElementById('subFaultType');
-    const selectedSubDiv = document.getElementById('selectedSubFaultType');
-    function updateSubTypes() {
-        const parentId = parseInt(faultTypeSel.value);
-        subSel.innerHTML = '<option value="">Seçiniz</option>';
-        if (!isNaN(parentId)) {
-            let found = false;
-            subFaultTypes.forEach(function(sub) {
-                if (sub.parent_id === parentId) {
-                    found = true;
-                    const opt = document.createElement('option');
-                    opt.value = sub.id;
-                    opt.textContent = sub.name;
-                    subSel.appendChild(opt);
-                }
-            });
-            subBox.style.display = found ? 'block' : 'none';
-        } else {
-            subBox.style.display = 'none';
-        }
-        selectedSubDiv.style.display = 'none';
-    }
-    function showSelectedSubType() {
-        const subId = parseInt(subSel.value);
-        if (!isNaN(subId) && subFaultTypes.some(sub => sub.id === subId)) {
-            const sub = subFaultTypes.find(sub => sub.id === subId);
-            selectedSubDiv.textContent = 'Seçilen Alt Tür: ' + sub.name;
-            selectedSubDiv.style.display = 'block';
-        } else {
-            selectedSubDiv.style.display = 'none';
-        }
-    }
-    faultTypeSel.addEventListener('change', updateSubTypes);
-    subSel.addEventListener('change', showSelectedSubType);
-    // İlk yüklemede de çalışsın (edit durumunda)
-    updateSubTypes();
-    showSelectedSubType();
-});
-
 // Karanlık mod toggle
 const darkToggle = document.getElementById('darkModeToggle');
 function setDarkMode(on) {
@@ -440,6 +355,27 @@ if (feedbackForm) {
     feedbackForm.reset();
   };
 }
+</script>
+<script>
+const types = <?= json_encode($types, JSON_UNESCAPED_UNICODE) ?>;
+document.addEventListener('DOMContentLoaded', function() {
+  var typeSel = document.getElementById('department');
+  var subSel = document.getElementById('subFaultType');
+  function updateSubtypes() {
+    var selected = typeSel.value;
+    subSel.innerHTML = '<option value="">Seçiniz</option>';
+    if (types[selected]) {
+      types[selected].forEach(function(sub) {
+        var opt = document.createElement('option');
+        opt.value = sub;
+        opt.textContent = sub;
+        subSel.appendChild(opt);
+      });
+    }
+  }
+  typeSel.addEventListener('change', updateSubtypes);
+  updateSubtypes();
+});
 </script>
 </body>
 </html> 

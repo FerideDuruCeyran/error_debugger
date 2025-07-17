@@ -1,0 +1,21 @@
+{
+    "Teknik Servis": [
+        "Makine\/Teknik",
+        "Tesisat",
+        "Klima Sistemi",
+        "Yangın Sistemi"
+    ],
+    "Elektrik": [
+        "Aydınlatma",
+        "Enerji Dağıtım",
+        "Enerji Kaynağı",
+        "Elektrik Raporu"
+    ],
+    "İnşaat": [
+        "Çatı\/Duvar",
+        "Boya",
+        "Kapı\/Pencere",
+        "Zemin Kaplama"
+    ],
+    "Bilgisayar": []
+}

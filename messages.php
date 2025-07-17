@@ -23,6 +23,62 @@ $allUsers = array_column($users, 'username');
 $messagesFile = 'messages.json';
 if (!file_exists($messagesFile)) file_put_contents($messagesFile, '[]');
 $messages = json_decode(file_get_contents($messagesFile), true);
+
+$toList = [];
+if ($currentUser['role'] === 'Admin') {
+    // Kendi teknik personelleri
+    foreach ($users as $u) {
+        if ($u['role'] === 'TeknikPersonel' && $u['department'] === $currentUser['department']) {
+            $toList[] = $u;
+        }
+    }
+    // Diğer adminler
+    foreach ($users as $u) {
+        if ($u['role'] === 'Admin' && $u['username'] !== $currentUser['username']) {
+            $toList[] = $u;
+        }
+    }
+    // MainAdmin/GenelAdmin
+    foreach ($users as $u) {
+        if (in_array($u['role'], ['MainAdmin', 'GenelAdmin'])) {
+            $toList[] = $u;
+        }
+    }
+} elseif (in_array($currentUser['role'], ['MainAdmin', 'GenelAdmin'])) {
+    // Main admin sadece adminlere mesaj atabilir
+    foreach ($users as $u) {
+        if ($u['role'] === 'Admin') {
+            $toList[] = $u;
+        }
+    }
+} elseif ($currentUser['role'] === 'TeknikPersonel') {
+    // Teknik personel: kendi adminine ve diğer teknik personellere mesaj atabilir
+    // Kendi adminini bul
+    $myAdmin = null;
+    foreach ($users as $u) {
+        if ($u['role'] === 'Admin' && isset($u['department']) && $u['department'] === $currentUser['department']) {
+            $myAdmin = $u;
+            break;
+        }
+    }
+    if ($myAdmin) {
+        $toList[] = $myAdmin;
+    }
+    // Diğer teknik personeller
+    foreach ($users as $u) {
+        if ($u['role'] === 'TeknikPersonel' && $u['username'] !== $currentUser['username']) {
+            $toList[] = $u;
+        }
+    }
+} else {
+    // Diğer roller için mevcut davranış (ör. farklı roller)
+    foreach ($users as $u) {
+        if ($u['username'] !== $currentUser['username']) {
+            $toList[] = $u;
+        }
+    }
+}
+
 // Mesaj gönderme
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['to'], $_POST['message'])) {
     $to = trim($_POST['to']);
@@ -66,7 +122,7 @@ if ($role === 'MainAdmin') {
     foreach ($users as $u) if ($u['role'] === 'Admin') $chatUsers[] = $u['username'];
 }
 // Aktif sohbet
-$activeUser = $_GET['user'] ?? ($chatUsers[0] ?? null);
+$activeUser = $_GET['user'] ?? ($chattedUserObjs[0]['username'] ?? null);
 // Mesaj geçmişi
 $chatHistory = [];
 if ($activeUser) {
@@ -83,6 +139,33 @@ if ($activeUser) {
         }
     }
     file_put_contents($messagesFile, json_encode($messages, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+}
+// Sohbet edilen kullanıcıları bul
+$myUsername = $currentUser['username'];
+$chattedUsers = [];
+foreach ($messages as $msg) {
+    if ($msg['from'] === $myUsername && $msg['to'] !== $myUsername) {
+        $chattedUsers[$msg['to']] = true;
+    }
+    if ($msg['to'] === $myUsername && $msg['from'] !== $myUsername) {
+        $chattedUsers[$msg['from']] = true;
+    }
+}
+// Sohbet edilen kullanıcıların user objelerini bul
+$chattedUserObjs = [];
+if (in_array($currentUser['role'], ['MainAdmin', 'GenelAdmin'])) {
+    // Main admin için sadece adminlerle olan sohbetler
+    foreach ($users as $u) {
+        if ($u['role'] === 'Admin' && isset($chattedUsers[$u['username']])) {
+            $chattedUserObjs[] = $u;
+        }
+    }
+} else {
+    foreach ($users as $u) {
+        if (isset($chattedUsers[$u['username']])) {
+            $chattedUserObjs[] = $u;
+        }
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -147,7 +230,7 @@ if ($activeUser) {
         elseif ($currentUser['role'] === 'TeknikPersonel') $panel = 'teknik_personel.php';
       }
       ?>
-      <a class="btn btn-outline-light me-2" href="<?= htmlspecialchars($panel) ?>"><i class="bi bi-arrow-left"></i> Geri</a>
+      <a class="btn btn-outline-light me-2" href="javascript:window.history.back()"><i class="bi bi-arrow-left"></i> Geri</a>
       <button class="btn-icon" id="darkModeToggle" title="Karanlık Mod"><i class="bi bi-moon"></i></button>
       <button class="btn-icon position-relative" id="notifBtn" title="Bildirimler" data-bs-toggle="modal" data-bs-target="#notifModal"><i class="bi bi-bell"></i></button>
       <button class="btn-icon" id="helpBtn" title="Yardım" data-bs-toggle="modal" data-bs-target="#helpModal"><i class="bi bi-question-circle"></i></button>
@@ -161,20 +244,16 @@ if ($activeUser) {
     <div class="col-md-4 mb-3">
       <div class="card shadow-sm">
         <div class="card-header bg-primary text-white">Sohbetler</div>
-        <ul class="list-group list-group-flush chat-list">
-          <?php foreach ($chatUsers as $u): ?>
-            <a href="messages.php?user=<?= urlencode($u) ?>" class="list-group-item list-group-item-action<?= $activeUser===$u?' chat-active':'' ?>">
-              <span class="chat-user"><i class="bi bi-person-circle"></i> <?= htmlspecialchars($u) ?></span>
-              <?php
-              $unread = 0;
-              foreach ($messages as $m) {
-                if ($m['from'] === $u && $m['to'] === $currentUser['username'] && !$m['read']) $unread++;
-              }
-              if ($unread): ?>
-                <span class="badge bg-danger ms-2"><?= $unread ?></span>
-              <?php endif; ?>
-            </a>
-          <?php endforeach; ?>
+        <ul class="list-group chat-list">
+          <?php if (empty($chattedUserObjs)): ?>
+            <li class="list-group-item text-muted">Henüz mesajlaşma yok.</li>
+          <?php else: ?>
+            <?php foreach ($chattedUserObjs as $u): ?>
+              <a href="messages.php?user=<?= urlencode($u['username']) ?>" class="list-group-item list-group-item-action<?= $activeUser===$u['username']?' chat-active':'' ?>">
+                <span class="chat-user"><i class="bi bi-person-circle"></i> <?= htmlspecialchars($u['username']) ?> (<?= htmlspecialchars($u['role']) ?>)</span>
+              </a>
+            <?php endforeach; ?>
+          <?php endif; ?>
         </ul>
       </div>
     </div>
@@ -210,7 +289,14 @@ if ($activeUser) {
         <?php if ($activeUser): ?>
         <div class="card-footer bg-white">
           <form method="post" class="d-flex gap-2">
-            <input type="hidden" name="to" value="<?= htmlspecialchars($activeUser) ?>">
+            <select name="to" class="form-select" required>
+              <option value="">Kime mesaj göndereceksiniz?</option>
+              <?php foreach ($toList as $u): ?>
+                <option value="<?= htmlspecialchars($u['username']) ?>">
+                  <?= htmlspecialchars($u['username']) ?> (<?= htmlspecialchars($u['role']) ?>)
+                </option>
+              <?php endforeach; ?>
+            </select>
             <input type="text" name="message" class="form-control" placeholder="Mesajınızı yazın..." required autocomplete="off">
             <button type="submit" class="btn btn-primary"><i class="bi bi-send"></i></button>
           </form>
