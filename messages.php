@@ -187,13 +187,30 @@ if (in_array($currentUser['role'], ['MainAdmin', 'GenelAdmin'])) {
     .chat-active { background: #e3f0fa; border-radius: 8px; }
     /* Dark mode için mesaj kutuları */
     body.dark-mode .chat-bubble.me, body.dark-mode .chat-bubble.them { background: #fff; color: #222; }
-</style>
+    html, body {
+      background: #181a1b !important;
+      color: #eee;
+      transition: none !important;
+    }
+  </style>
+  <script>
+    (function() {
+      try {
+        var userPref = localStorage.getItem('darkMode');
+        if (userPref === '1') {
+          document.documentElement.classList.add('dark-mode');
+        } else if (userPref === null && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          document.documentElement.classList.add('dark-mode');
+        }
+      } catch(e){}
+    })();
+  </script>
 </head>
 <body class="bg-light">
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
   <div class="container-fluid">
-    <a class="navbar-brand d-flex align-items-center" href="<?php echo htmlspecialchars($panel); ?>">
-      <img src="https://upload.wikimedia.org/wikipedia/tr/d/dc/Akdeniz_%C3%9Cniversitesi_logosu.IMG_0838.png" class="akdeniz-logo" alt="Akdeniz Üniversitesi">
+    <a class="navbar-brand d-flex align-items-center" href="index.php">
+      <img src="uploads/Akdeniz_Üniversitesi_logosu.IMG_0838.png" class="akdeniz-logo" alt="Akdeniz Üniversitesi" style="width:56px;height:56px;border-radius:50%;background:#fff;">
       <span>Akdeniz Üniversitesi</span>
     </a>
     <?php
@@ -348,6 +365,16 @@ if (in_array($currentUser['role'], ['MainAdmin', 'GenelAdmin'])) {
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+(function() {
+  try {
+    var userPref = localStorage.getItem('darkMode');
+    if (userPref === '1') {
+      document.documentElement.classList.add('dark-mode');
+    } else if (userPref === null && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      document.documentElement.classList.add('dark-mode');
+    }
+  } catch(e){}
+})();
 // Karanlık mod toggle
 const darkToggle = document.getElementById('darkModeToggle');
 function setDarkMode(on) {
@@ -362,7 +389,6 @@ function setDarkMode(on) {
   }
 }
 darkToggle.onclick = () => setDarkMode(!document.body.classList.contains('dark-mode'));
-if (localStorage.getItem('darkMode') === '1') setDarkMode(true);
 
 function clearNotifs() {
   document.querySelector('#notifModal .list-group').innerHTML = '<li class="list-group-item text-muted">Tüm bildirimler temizlendi.</li>';
