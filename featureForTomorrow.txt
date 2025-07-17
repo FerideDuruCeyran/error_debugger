@@ -1,0 +1,153 @@
+Feature Requests for Fault Assignment and Logging System
+========================================================
+
+Original User Description:
+--------------------------
+Görevli atama menüsünde birden fazla görevli atanabilmeli.
+Bir görevli seçildiğinde 2. görevli seçimi için menü açılmalı.
+Eğer kendi bölümünden farklı bir bölüm seçilise o bölümün sorumlusu olan müdüre gitmeli.
+Sadece kendi bölümünde çalışan atayabilmeli.
+
+assignedTo will be empty as default.
+Assigning to multiple members will be possible.
+But we will assign to admin of that department first.
+Only admin will be able to see that.
+Unassigned fault reports will stay in a list for admin on php website.
+Admin will assign it to multiple workers of their own or they can also add another department's boss admin into fault report.
+Admins have right to deny reports and remove their names from assignedTo.
+Worker technician users don't have that privilege (yet).
+After assigning it to someone, fault report won't show in the waiting list, it will go to assigned list on the admin's page.
+Those 2 lists will be different.
+We will also add logs into the system.
+Mainadmin must be able to see the log of almost every action on the logs page.
+It needs to be able to filtered and page system needs to be implemented in order to not overwhelm the server.
+
+
+Staged Feature Breakdown:
+-------------------------
+
+**Stage 1: Multiple Assignment Support**
+- Allow assigning a fault to multiple users (assignedTo becomes a list/relationship).
+- When one assignee is selected, UI should allow adding a second (or more) assignees.
+- By default, assignedTo is empty.
+
+**Stage 2: Departmental Assignment Logic**
+- If a different department is selected, the fault should be routed to the admin of that department.
+- Admins can only assign faults to users within their own department.
+
+**Stage 3: Assignment Workflow and Permissions**
+- Unassigned fault reports are visible in a waiting list for admins.
+- Admins can assign faults to multiple workers in their department or add another department's admin.
+- Admins can deny reports and remove themselves from assignedTo.
+- Technician users cannot deny or remove themselves (for now).
+- Once assigned, the fault moves from the waiting list to the assigned list on the admin's page.
+- Waiting and assigned lists are separate.
+
+**Stage 4: Logging and MainAdmin Oversight**
+- Add a logging system to record almost every action (assign, deny, etc.).
+- Mainadmin can view logs on a dedicated logs page.
+- Logs page must support filtering and pagination to avoid server overload.
+
+
+**Next Steps:**
+- Confirm with the user which stage to implement first.
+- Implement features one by one, confirming requirements at each stage. 
+
+
+Implementation Plan:
+--------------------
+
+1. **Finalize Database Schema for Stage 1**
+   - Design and create the necessary tables to support multiple assignees for faults.
+   - Define the many-to-many relationship between faults and users (e.g., create a FaultAssignments table).
+   - Ensure all foreign keys and constraints are in place.
+   - Prepare example SQL scripts for table creation and initial data.
+
+2. **Review and Confirm Schema**
+   - Review the proposed SQL schema with the user.
+   - Make adjustments based on feedback before proceeding to PHP implementation.
+
+3. **Update PHP Backend for Assignment Logic**
+   - Modify PHP code to support assigning multiple users to a fault.
+   - Update forms and backend logic to handle the new assignment structure.
+   - Ensure that the UI allows adding/removing multiple assignees.
+
+4. **Implement Admin Assignment Workflow**
+   - Build the waiting list and assigned list views for admins.
+   - Implement logic for admins to assign, deny, or remove assignments.
+   - Ensure only admins can see and manage unassigned faults.
+
+5. **Test Assignment Features**
+   - Test the full assignment workflow with multiple users and departments.
+   - Validate permissions and visibility for admins and technicians.
+
+6. **Iterate and Move to Next Stage**
+   - After Stage 1 is complete and tested, proceed to Stage 2 (Departmental Assignment Logic), following a similar process: design SQL, confirm, implement PHP, test.
+
+7. **Document and Maintain**
+   - Document all changes, table structures, and business logic for future reference.
+   - Maintain a changelog for each stage.
+
+
+**Action:**
+- Begin with Step 1: Design and propose the SQL schema for multiple assignment support. 
+
+Extra Features:
+---------------
+
+**User Notes on Faults**
+- Admins, workers, and users can each leave a note on any fault report.
+- Each user can add only one note per fault, but multiple users can add notes to the same fault.
+- Notes will be displayed as small colored message bubbles next to the fault report.
+- Hovering over a bubble will show a speech bubble with the author's name and their note text.
+- This feature is considered an extra and is not part of the main workflow, but adds value for communication and context on fault reports.
+- In the future, users will be able to edit their own note on a fault. 
+
+MainAdmin User Management Feature:
+----------------------------------
+- Create a new role: 'MainAdmin'.
+- Add a user named 'İrfan' with the MainAdmin role to the database.
+- Build a UI for MainAdmin to add new users to the system.
+- Create a profile page for MainAdmin to view and edit their profile details (e.g., email, etc.).
+- Use this workflow to test user creation, role assignment, and SQL integration.
+
+Next Steps (Staged Plan):
+-------------------------
+1. Add 'MainAdmin' role to the Roles table.
+2. Insert user 'İrfan' as MainAdmin into the Users table.
+3. Implement login functionality for MainAdmin.
+4. Build the UI for MainAdmin to add new users (user creation form, role/department selection, etc.).
+5. Implement the backend logic for user creation (insert into Users table, validation, etc.).
+6. Create a profile page for MainAdmin with editable fields (email, etc.).
+7. Test the full workflow: login as MainAdmin, add users, edit profile.
+8. Iterate and improve based on test results and feedback. 
+
+
+Progress Summary (as of now):
+-----------------------------
+
+**What Has Been Done:**
+- Designed and created normalized SQL tables for Roles, Departments, Users, Faults, and FaultAssignments.
+- Implemented PHP-to-MSSQL connection and tested inserts.
+- Built a SQL-based login system (no more users.json).
+- Created a MainAdmin user (İrfan) and ensured only MainAdmin can access admin features.
+- Refactored main_admin.php, login.php, and related files to use SQL for authentication and user management.
+- Cleaned up legacy logic and fixed all role checks to use only 'MainAdmin'.
+- Verified session handling and fixed all access control issues.
+
+**Current Status:**
+- Database schema and authentication are complete.
+- MainAdmin can log in and access the admin panel.
+
+**Where We Left Off:**
+- Ready to build the user management UI for MainAdmin and implement user creation in the database.
+
+**Next Steps:**
+1. Build the UI for MainAdmin to add new users (user creation form, role/department selection, etc.).
+2. Implement backend logic for user creation (insert into Users table, validation, etc.).
+3. Create a profile page for MainAdmin with editable fields (email, etc.).
+4. Test the full workflow: login as MainAdmin, add users, edit profile.
+5. Update PHP backend and forms to support assigning multiple users to a fault (using FaultAssignments).
+6. Build admin UI for waiting/assigned lists and assignment actions.
+7. Test assignment features with multiple users and departments.
+8. After assignment features are complete and tested, proceed to Stage 2 (Departmental Assignment Logic), then logging, and extra features (notes on faults). 

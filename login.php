@@ -1,42 +1,67 @@
 <?php
 session_start();
 $error = '';
-$usersFile = 'users.json';
-$users = file_exists($usersFile) ? json_decode(file_get_contents($usersFile), true) : [];
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = $_POST['username'] ?? '';
-    $password = $_POST['password'] ?? '';
-    $foundUser = null;
-    foreach ($users as $u) {
-        if ($u['username'] === $username && isset($u['password']) && $u['password'] === $password) {
-            $foundUser = $u;
-            break;
-        }
-    }
-    if ($foundUser) {
-        $_SESSION['user'] = $foundUser['username'];
-        // last_login güncelle
-        foreach ($users as &$u) {
-            if ($u['username'] === $foundUser['username']) {
-                $u['last_login'] = date('Y-m-d H:i:s');
-                break;
+
+// SQL Server connection settings
+$serverName = "LAPTOP-KK1SQ6AD\\SQLEXPRESS";
+$connectionOptions = [
+    "Database" => "ArizaBildirimSistemi",
+    "Uid" => "phpuser",
+    "PWD" => "serverdata123"
+];
+
+try {
+    $conn = new PDO(
+        "sqlsrv:Server=$serverName;Database=" . $connectionOptions["Database"],
+        $connectionOptions["Uid"],
+        $connectionOptions["PWD"]
+    );
+    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $username = $_POST['username'] ?? '';
+        $password = $_POST['password'] ?? '';
+
+        $sql = "SELECT u.*, r.name AS role, d.name AS department
+                FROM Users u
+                LEFT JOIN Roles r ON u.role_id = r.id
+                LEFT JOIN Departments d ON u.department_id = d.id
+                WHERE u.username = :username";
+        $stmt = $conn->prepare($sql);
+        $stmt->execute(['username' => $username]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($user && $user['password'] === $password) { // Use password_verify() if hashed
+            $_SESSION['user'] = $user['username'];
+            $_SESSION['role'] = $user['role'];
+            $_SESSION['department'] = $user['department'];
+            // Update last_login
+            $update = $conn->prepare("UPDATE Users SET last_login = GETDATE() WHERE id = :id");
+            $update->execute(['id' => $user['id']]);
+            // Redirect by role
+            if ($user['role'] === 'MainAdmin') {
+                header('Location: main_admin.php');
+            } elseif ($user['role'] === 'Admin' || $user['role'] === 'AltAdmin') {
+                header('Location: admin.php');
+            } elseif ($user['role'] === 'TeknikPersonel') {
+                header('Location: teknik_personel.php');
+            } else {
+                header('Location: index.php');
             }
-        }
-        file_put_contents($usersFile, json_encode($users, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
-        // Role göre yönlendirme
-        if ($foundUser['role'] === 'MainAdmin' || $foundUser['role'] === 'GenelAdmin') {
-            header('Location: main_admin.php');
-        } elseif ($foundUser['role'] === 'Admin' || $foundUser['role'] === 'AltAdmin') {
-            header('Location: admin.php');
-        } elseif ($foundUser['role'] === 'TeknikPersonel') {
-            header('Location: teknik_personel.php');
+            exit;
         } else {
-            header('Location: index.php');
+            $error = 'Kullanıcı adı veya şifre hatalı.';
+            // Debug output
+            if ($user) {
+                echo "User found, but password mismatch. DB password: " . $user['password'] . " Input: " . $password;
+            } else {
+                echo "No user found for username: " . $username;
+            }
+            exit;
         }
-        exit;
-    } else {
-        $error = 'Kullanıcı adı veya şifre hatalı.';
     }
+} catch (PDOException $e) {
+    $error = "Veritabanı bağlantı hatası: " . $e->getMessage();
 }
 ?>
 <!DOCTYPE html>

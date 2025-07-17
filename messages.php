@@ -38,13 +38,13 @@ if ($currentUser['role'] === 'Admin') {
             $toList[] = $u;
         }
     }
-    // MainAdmin/GenelAdmin
+    // MainAdmin
     foreach ($users as $u) {
-        if (in_array($u['role'], ['MainAdmin', 'GenelAdmin'])) {
+        if (in_array($u['role'], ['MainAdmin'])) {
             $toList[] = $u;
         }
     }
-} elseif (in_array($currentUser['role'], ['MainAdmin', 'GenelAdmin'])) {
+} elseif (in_array($currentUser['role'], ['MainAdmin'])) {
     // Main admin sadece adminlere mesaj atabilir
     foreach ($users as $u) {
         if ($u['role'] === 'Admin') {
@@ -153,7 +153,7 @@ foreach ($messages as $msg) {
 }
 // Sohbet edilen kullanıcıların user objelerini bul
 $chattedUserObjs = [];
-if (in_array($currentUser['role'], ['MainAdmin', 'GenelAdmin'])) {
+if (in_array($currentUser['role'], ['MainAdmin'])) {
     // Main admin için sadece adminlerle olan sohbetler
     foreach ($users as $u) {
         if ($u['role'] === 'Admin' && isset($chattedUsers[$u['username']])) {

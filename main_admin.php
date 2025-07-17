@@ -1,21 +1,50 @@
 <?php
 session_start();
+// Debug output removed
 require_once 'config.php';
 
-$usersFile = 'users.json';
-$users = json_decode(file_get_contents($usersFile), true);
-$currentUser = null;
-foreach ($users as $u) {
-    if ($u['username'] === ($_SESSION['user'] ?? '')) {
-        $currentUser = $u;
-        break;
-    }
-}
-if (!$currentUser || $currentUser['role'] !== 'GenelAdmin') {
+// Session check for MainAdmin
+if (!isset($_SESSION['user']) || ($_SESSION['role'] ?? '') !== 'MainAdmin') {
     header('Location: login.php');
     exit;
 }
+
+// Set currentUser from session
+$currentUser = [
+    'username' => $_SESSION['user'],
+    'role' => $_SESSION['role'],
+    'department' => $_SESSION['department']
+];
+
+// SQL Server connection settings
+$serverName = "LAPTOP-KK1SQ6AD\\SQLEXPRESS";
+$connectionOptions = [
+    "Database" => "ArizaBildirimSistemi",
+    "Uid" => "phpuser",
+    "PWD" => "serverdata123"
+];
+
+try {
+    $conn = new PDO(
+        "sqlsrv:Server=$serverName;Database=" . $connectionOptions["Database"],
+        $connectionOptions["Uid"],
+        $connectionOptions["PWD"]
+    );
+    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    die("Veritabanı bağlantı hatası: " . $e->getMessage());
+}
+
 $successMsg = $errorMsg = '';
+
+// Fetch all users from SQL
+$sql = "SELECT u.*, r.name AS role, d.name AS department
+        FROM Users u
+        LEFT JOIN Roles r ON u.role_id = r.id
+        LEFT JOIN Departments d ON u.department_id = d.id";
+$stmt = $conn->query($sql);
+$users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 // Kullanıcı ekleme
 if (isset($_POST['add_user'])) {
     $newId = count($users) ? max(array_column($users, 'id')) + 1 : 1;
@@ -91,7 +120,7 @@ if (isset($_POST['update_user'])) {
 }
 
 // Arıza silme işlemi (sadece MainAdmin için)
-if (isset($_POST['delete_fault'], $_POST['delete_trackingNo']) && $currentUser && $currentUser['role'] === 'GenelAdmin') {
+if (isset($_POST['delete_fault'], $_POST['delete_trackingNo']) && $currentUser && $currentUser['role'] === 'MainAdmin') {
     $deleteTrackingNo = $_POST['delete_trackingNo'];
     if (file_exists(PROBLEM_LOG_FILE)) {
         $lines = file(PROBLEM_LOG_FILE, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
@@ -460,7 +489,7 @@ body.dark-mode .detail-cardbox .close-btn:hover {
         <th class="text-center" style="min-width: 200px;">Durum</th>
         <th><i class="bi bi-person-workspace"></i> Teknisyen</th>
         <th class="text-center"><i class="bi bi-pencil-square"></i> İşlemler</th>
-        <?php if ($currentUser && $currentUser['role'] === 'GenelAdmin'): ?>
+        <?php if ($currentUser && $currentUser['role'] === 'MainAdmin'): ?>
             <th class="text-center"><i class="bi bi-trash"></i> Sil</th>
         <?php endif; ?>
     </tr>
@@ -577,7 +606,7 @@ if (!empty($desc)) : ?>
         </button>
         </div>
     </td>
-    <?php if ($currentUser && $currentUser['role'] === 'GenelAdmin'): ?>
+    <?php if ($currentUser && $currentUser['role'] === 'MainAdmin'): ?>
     <td class="text-center">
         <form method="post" onsubmit="return confirm('Bu arızayı silmek istediğinize emin misiniz?');" style="display:inline-block">
             <input type="hidden" name="delete_trackingNo" value="<?= htmlspecialchars($p['trackingNo']) ?>">
