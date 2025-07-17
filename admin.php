@@ -10,7 +10,7 @@ foreach ($users as $u) {
         break;
     }
 }
-if (!$currentUser || $currentUser['role'] !== 'Admin') {
+if (!$currentUser || ($currentUser['role'] !== 'Admin' && $currentUser['role'] !== 'AltAdmin')) {
     header('Location: login.php');
     exit;
 }
@@ -86,7 +86,13 @@ if (file_exists(PROBLEM_LOG_FILE)) {
         }
     }
 }
+// Arıza listeleme: Sadece kendi departmanındaki arızalar (Admin/AltAdmin), MainAdmin ise tüm arızalar
 $problems = $reports;
+if ($currentUser['role'] === 'Admin' || $currentUser['role'] === 'AltAdmin') {
+    $problems = array_filter($problems, function($p) use ($currentUser) {
+        return isset($p['department']) && $p['department'] === $currentUser['department'];
+    });
+}
 
 $filter = $_GET['filter'] ?? '';
 $updateMsg = '';
@@ -125,7 +131,7 @@ if (isset($_POST['update_status'])) {
     }
 }
 // Teknisyen atama işlemi (sadece altadmin için)
-if ($_SESSION['user'] === 'altadmin' && isset($_POST['assign_tech'], $_POST['assign_tracking'], $_POST['assign_personnel'])) {
+if (($currentUser['role'] === 'AltAdmin' || $currentUser['role'] === 'Admin') && isset($_POST['assign_tech'], $_POST['assign_tracking'], $_POST['assign_personnel'])) {
     $assignTracking = trim($_POST['assign_tracking']);
     $assignPersonnel = trim($_POST['assign_personnel']);
     if (file_exists(PROBLEM_LOG_FILE)) {
@@ -135,7 +141,7 @@ if ($_SESSION['user'] === 'altadmin' && isset($_POST['assign_tech'], $_POST['ass
             if ($entry && isset($entry['trackingNo']) && $entry['trackingNo'] === $assignTracking) {
                 $entry['assignedTo'] = $assignPersonnel;
                 $entry['assigned'] = $assignPersonnel; // eski kodlarla uyum için
-                $entry['assignedBy'] = $_SESSION['user']; // Altadmin kaydı
+                $entry['assignedBy'] = $currentUser['username']; // Admin/Altadmin kaydı
                 $lines[$i] = json_encode($entry, JSON_UNESCAPED_UNICODE);
                 // Bildirim: Teknisyene
                 addNotification($assignPersonnel, 'Yeni bir arıza size atandı (Takip No: ' . $assignTracking . ').');
@@ -164,18 +170,18 @@ if ($_SESSION['user'] === 'teknikpersonel' && isset($_POST['confirm_status'], $_
 }
 
 // Listele
-$problems = [];
-if (file_exists(PROBLEM_LOG_FILE)) {
-    $lines = file(PROBLEM_LOG_FILE, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    foreach ($lines as $line) {
-        $entry = json_decode($line, true);
-        if ($entry) {
-            if ($filter === '' || ($entry['status'] ?? '') === $filter) {
-                $problems[] = $entry;
-            }
-        }
-    }
-}
+// $problems = [];
+// if (file_exists(PROBLEM_LOG_FILE)) {
+//     $lines = file(PROBLEM_LOG_FILE, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+//     foreach ($lines as $line) {
+//         $entry = json_decode($line, true);
+//         if ($entry) {
+//             if ($filter === '' || ($entry['status'] ?? '') === $filter) {
+//                 $problems[] = $entry;
+//             }
+//         }
+//     }
+// }
 $page = 'admin';
 
 // Bildirim gösterimi
@@ -191,8 +197,13 @@ if (file_exists($notifFile)) {
     }
 }
 
-// Teknisyenler listesini oku
-$teknisyenler = array_filter($users, function($u) { return $u['role'] === 'TeknikPersonel'; });
+// Giriş yapan altadminin departmanını bul
+$altadmin_department = $currentUser['department'] ?? null;
+// Sadece kendi departmanındaki teknisyenleri listele
+$teknisyenler = array_filter($users, function($u) use ($altadmin_department) {
+    return $u['role'] === 'TeknikPersonel' && $u['department'] === $altadmin_department;
+});
+// Atama formunda sadece $teknisyenler kullanılacak
 
 // Ortak arıza durumları
 $faultStatuses = [
@@ -585,12 +596,12 @@ if (file_exists(PROBLEM_LOG_FILE)) {
 <div class="container">
     <form method="get" class="row g-3 mb-4" id="filterForm">
         <div class="col-md-2">
-            <label class="form-label">Tarih</label>
-            <input type="date" name="date1" class="form-control" value="<?= htmlspecialchars($date1) ?>">
+            <label class="form-label" for="date1">Tarih</label>
+            <input type="date" name="date1" id="date1" class="form-control" value="<?= htmlspecialchars($date1) ?>">
         </div>
         <div class="col-md-3">
-            <label class="form-label">Birim</label>
-            <select name="department" class="form-select">
+            <label class="form-label" for="department">Birim</label>
+            <select name="department" id="department" class="form-select">
                 <option value="">Tümü</option>
                 <?php
                 $departments = [
@@ -602,8 +613,8 @@ if (file_exists(PROBLEM_LOG_FILE)) {
             </select>
         </div>
         <div class="col-md-3">
-            <label class="form-label">Durum</label>
-            <select name="status" class="form-select">
+            <label class="form-label" for="status">Durum</label>
+            <select name="status" id="status" class="form-select">
 <?php foreach ($faultStatuses as $key => $label): ?>
 <option value="<?= $key ?>" <?= $status === $key ? 'selected' : '' ?>><?= $label ?></option>
 <?php endforeach; ?>
@@ -666,7 +677,7 @@ if (file_exists(PROBLEM_LOG_FILE)) {
   </div>
 </div>
 <?php endif; ?>
-    <?php if (isset($_GET['page']) && $_GET['page'] === 'assigned' && $currentUser['role'] === 'Admin'): ?>
+    <?php if (isset($_GET['page']) && $_GET['page'] === 'assigned' && ($currentUser['role'] === 'Admin' || $currentUser['role'] === 'AltAdmin')): ?>
 <h3>Atanan İşler</h3>
 <table class="table table-bordered table-striped align-middle mb-4">
 <thead class="table-primary">
@@ -678,7 +689,14 @@ if (file_exists(PROBLEM_LOG_FILE)) {
     $lines = file(PROBLEM_LOG_FILE, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($lines as $line) {
         $entry = json_decode($line, true);
-        if ($entry && isset($entry['assignedTo'])) {
+        if (
+            $entry &&
+            isset($entry['assignedTo']) &&
+            isset($entry['department']) &&
+            $entry['department'] === $currentUser['department'] &&
+            isset($users) &&
+            in_array($entry['assignedTo'], array_column($teknisyenler, 'username'))
+        ) {
             echo '<tr>';
             echo '<td>' . htmlspecialchars($entry['trackingNo']) . '</td>';
             echo '<td>' . htmlspecialchars(isset($entry['description']) ? $entry['description'] : '') . '</td>';
@@ -702,7 +720,7 @@ if (file_exists(PROBLEM_LOG_FILE)) {
             </h5>
         </div>
         <div class="card-body assign-tech-body" style="padding: 1.2rem 1.2rem 0.7rem 1.2rem;">
-            <form method="post" class="w-100">
+            <form method="post" class="w-100" id="assignTechForm">
                 <div class="row g-3 align-items-center">
                     <div class="col-12 col-md-4">
                         <label class="form-label fw-bold mb-1"><i class="bi bi-hash"></i> Arıza Takip No</label>
@@ -877,20 +895,21 @@ if (file_exists(PROBLEM_LOG_FILE)) {
     </table>
 
     <!-- Popup ve Overlay -->
+    <!-- Durum Düzenleme Popup -->
     <div id="updateOverlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); z-index:9998;" onclick="closeUpdatePopup(event)"></div>
     <div id="updatePopup" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); min-width:340px; background:#fff; border-radius:16px; box-shadow:0 8px 40px rgba(0,0,0,0.18); z-index:9999; padding:2rem 2rem 1.5rem 2rem;">
         <form method="post" id="updateForm">
             <input type="hidden" name="update_trackingNo" id="update_trackingNo">
             <div class="mb-3">
-                <label class="form-label">Durum</label>
+                <label class="form-label" for="update_status">Durum</label>
                 <select name="update_status" id="update_status" class="form-select" required>
-<?php foreach ($faultStatuses as $key => $label): ?>
-    <option value="<?= $key ?>"><?= $label ?></option>
-<?php endforeach; ?>
+                    <option value="Bekliyor">Bekliyor</option>
+                    <option value="Onaylandı">Onaylandı</option>
+                    <option value="Tamamlandı">Tamamlandı</option>
                 </select>
             </div>
             <div class="mb-3">
-                <label class="form-label">Teknisyen</label>
+                <label class="form-label" for="update_technician">Teknisyen</label>
                 <select name="update_technician" id="update_technician" class="form-select">
                     <option value="">(Atanmamış)</option>
                     <?php foreach ($teknisyenler as $t): ?>
@@ -901,8 +920,8 @@ if (file_exists(PROBLEM_LOG_FILE)) {
                 </select>
             </div>
             <div class="mb-3">
-            <label class="form-label">Mesaj</label>
-            <textarea name="update_message" id="update_message" class="form-control" rows="3" placeholder="Bu arıza için not veya bilgi mesajı yazın..."></textarea>
+                <label class="form-label" for="update_message">Mesaj</label>
+                <textarea name="update_message" id="update_message" class="form-control" rows="3" placeholder="Bu arıza için not veya bilgi mesajı yazın..."></textarea>
             </div>
             <div class="d-flex justify-content-end gap-2">
                 <button type="button" class="btn btn-secondary" onclick="closeUpdatePopup()">İptal</button>
@@ -910,23 +929,64 @@ if (file_exists(PROBLEM_LOG_FILE)) {
             </div>
         </form>
     </div>
+    <!-- Detay Popup -->
+    <div id="detailOverlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); z-index:9998;" onclick="closeDetailPopup(event)"></div>
+    <div id="detailPopup" style="display:none; position:fixed; min-width:320px; background:#fff; border-radius:16px; box-shadow:0 8px 40px rgba(0,0,0,0.18); z-index:9999; padding:2rem 2rem 1.5rem 2rem;">
+        <button class="btn btn-light btn-sm float-end" onclick="closeDetailPopup()">&times;</button>
+        <div id="detailPopupContent"></div>
+    </div>
     <script>
 function openUpdatePopup(trackingNo, status, technician, message) {
-    console.log('[DEBUG] openUpdatePopup called with:', {trackingNo, status, technician, message});
-        document.getElementById('update_trackingNo').value = trackingNo;
+    document.getElementById('update_trackingNo').value = trackingNo || '';
     document.getElementById('update_status').value = status || 'Bekliyor';
     document.getElementById('update_technician').value = technician || '';
     document.getElementById('update_message').value = message || '';
-        document.getElementById('updateOverlay').style.display = 'block';
-        document.getElementById('updatePopup').style.display = 'block';
+    document.getElementById('updateOverlay').style.display = 'block';
+    document.getElementById('updatePopup').style.display = 'block';
+}
+function closeUpdatePopup(e) {
+    if (!e || e.target === document.getElementById('updateOverlay')) {
+        document.getElementById('updateOverlay').style.display = 'none';
+        document.getElementById('updatePopup').style.display = 'none';
     }
-    function closeUpdatePopup(e) {
-        if (!e || e.target === document.getElementById('updateOverlay')) {
-            document.getElementById('updateOverlay').style.display = 'none';
-            document.getElementById('updatePopup').style.display = 'none';
+}
+function openDetailCardbox(trackingNo, btn, event) {
+    if (event) event.stopPropagation();
+    const p = problemsData.find(x => String(x.trackingNo).trim() === String(trackingNo).trim());
+    if (!p) {
+        alert('Detay bulunamadı: ' + trackingNo);
+        return;
+    }
+    let html = `<div class='mb-2'><b>Takip No:</b> ${p.trackingNo}</div>`;
+    html += `<div class='mb-2'><b>Detaylı Tanım:</b><br><span>${p.detailedDescription ?? p.description ?? '-'}</span></div>`;
+    if (p.filePath && p.filePath !== '') {
+        const fileName = p.filePath.split('/').pop();
+        const ext = fileName.split('.').pop().toLowerCase();
+        if (["jpg","jpeg","png","gif","bmp","webp"].includes(ext)) {
+            html += `<div class='mb-2'><img src='uploads/${fileName}' alt='Ekli Görsel' style='max-width:100%;max-height:180px;border-radius:8px;'></div>`;
+        } else {
+            html += `<div class='mb-2'><a href='uploads/${fileName}' target='_blank' class='btn btn-outline-primary btn-sm'><i class='bi bi-file-earmark-arrow-down'></i> Dosyayı Görüntüle/İndir</a></div>`;
         }
+    } else {
+        html += `<div class='mb-2 text-muted'>Dosya eklenmemiş.</div>`;
     }
-    </script>
+    html += `<div class='mb-2'><b>Birim:</b> ${p.department ?? '-'}</div>`;
+    if (p.message && p.message !== '') {
+        html += `<div class='mb-2'><b>Durum Mesajı:</b><br><span>${p.message}</span></div>`;
+    }
+    html += `<div class='mb-2'><b>Durum:</b> ${p.status ?? '-'}</div>`;
+    html += `<div class='mb-2'><b>Tarih:</b> ${p.date ?? '-'}</div>`;
+    document.getElementById('detailPopupContent').innerHTML = html;
+    document.getElementById('detailOverlay').style.display = 'block';
+    document.getElementById('detailPopup').style.display = 'block';
+}
+function closeDetailPopup(e) {
+    if (!e || e.target === document.getElementById('detailOverlay')) {
+        document.getElementById('detailOverlay').style.display = 'none';
+        document.getElementById('detailPopup').style.display = 'none';
+    }
+}
+</script>
     </div>
 </div>
 <!-- Detay Modalı ve eski openDetailModal fonksiyonunu tamamen kaldır -->
@@ -1042,7 +1102,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <script>
 // PHP'den JS'ye arıza verilerini dizi (array) olarak aktar
 const faultTypes = <?= json_encode($faultTypes, JSON_UNESCAPED_UNICODE) ?>;
-const problemsData = <?php echo json_encode($problems, JSON_UNESCAPED_UNICODE); ?>;
+// PHP'den JS'ye problemsData aktar
+const problemsData = <?php echo json_encode(array_values($problems), JSON_UNESCAPED_UNICODE); ?>;
 let openCardbox = null;
 function openDetailCardbox(trackingNo, btn, event) {
     console.log('[DEBUG] openDetailCardbox called with:', trackingNo, problemsData);
@@ -1068,7 +1129,9 @@ function openDetailCardbox(trackingNo, btn, event) {
         html += `<div class='mb-2 text-muted'>Dosya eklenmemiş.</div>`;
     }
     html += `<div class='mb-2'><b>Birim:</b> ${p.department ?? '-'}</div>`;
-    html += `<div class='mb-2'><b>Arıza Türü:</b> ${faultTypes[p.faultType] ?? p.faultType}</div>`;
+    if (p.message && p.message !== '') {
+        html += `<div class='mb-2'><b>Durum Mesajı:</b><br><span>${p.message}</span></div>`;
+    }
     html += `<div class='mb-2'><b>Durum:</b> ${p.status ?? '-'}</div>`;
     html += `<div class='mb-2'><b>Tarih:</b> ${p.date ?? '-'}</div>`;
     const card = document.createElement('div');
@@ -1093,4 +1156,24 @@ function openDetailCardbox(trackingNo, btn, event) {
       document.addEventListener('mousedown', handler);
     }, 0);
 }
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const form = document.getElementById('assignTechForm');
+  if (form) {
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const formData = new FormData(form);
+      fetch('admin.php', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.text())
+      .then(html => {
+        location.reload();
+      })
+      .catch(err => alert('Atama sırasında hata oluştu!'));
+    });
+  }
+});
 </script>
