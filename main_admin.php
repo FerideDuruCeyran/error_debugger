@@ -45,80 +45,6 @@ $sql = "SELECT u.*, r.name AS role, d.name AS department
 $stmt = $conn->query($sql);
 $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Kullanıcı ekleme
-if (isset($_POST['add_user'])) {
-    $newId = count($users) ? max(array_column($users, 'id')) + 1 : 1;
-    $username = trim($_POST['username']);
-    $role = $_POST['role'];
-    $email = trim($_POST['email'] ?? '');
-    $password = trim($_POST['password'] ?? '');
-    $department = $_POST['department'] ?? '';
-    $manager_id = $_POST['manager_id'] ?? '';
-    $errorMsg = '';
-
-    $user = [
-        'id' => $newId,
-        'username' => $username,
-        'role' => $role,
-        'email' => $email,
-        'password' => $password,
-        'last_login' => '',
-        'reset_token' => ''
-    ];
-
-    if ($role === 'Admin' || $role === 'AltAdmin') {
-        if (!$department) {
-            $errorMsg = 'Lütfen bağlı olduğu türü (departman) seçin!';
-        } else {
-            $user['department'] = $department;
-            $user['manager_id'] = 1; // MainAdmin'e bağlı
-        }
-    } elseif ($role === 'TeknikPersonel') {
-        if (!$manager_id && !$department) {
-            $errorMsg = 'Teknik personel için bağlı admin veya tür (departman) seçmelisiniz!';
-        } else if ($manager_id) {
-            // Seçilen admin/altadmin'den departman al
-            $admin = null;
-            foreach ($users as $u) {
-                if ($u['id'] == $manager_id) {
-                    $admin = $u;
-                    break;
-                }
-            }
-            $user['department'] = $admin ? $admin['department'] : '';
-            $user['manager_id'] = $manager_id;
-        } else {
-            $user['department'] = $department;
-            $user['manager_id'] = null;
-        }
-    }
-    if (!$errorMsg) {
-        $users[] = $user;
-        file_put_contents($usersFile, json_encode($users, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
-        $successMsg = 'Kullanıcı başarıyla eklendi.';
-    }
-}
-// Kullanıcı silme
-if (isset($_POST['delete_user'])) {
-    $users = array_filter($users, function($u) {
-        return $u['id'] != $_POST['delete_id'];
-    });
-    file_put_contents($usersFile, json_encode(array_values($users), JSON_UNESCAPED_UNICODE));
-    $successMsg = 'Kullanıcı başarıyla silindi.';
-}
-// Kullanıcı güncelleme
-if (isset($_POST['update_user'])) {
-    foreach ($users as &$u) {
-        if ($u['id'] == $_POST['update_id']) {
-            $u['username'] = trim($_POST['update_username']);
-            $u['role'] = $_POST['update_role'];
-        }
-    }
-    unset($u);
-    file_put_contents($usersFile, json_encode($users, JSON_UNESCAPED_UNICODE));
-    $successMsg = 'Kullanıcı başarıyla güncellendi.';
-}
-
 // Arıza silme işlemi (sadece MainAdmin için)
 if (isset($_POST['delete_fault'], $_POST['delete_trackingNo']) && $currentUser && $currentUser['role'] === 'MainAdmin') {
     $deleteTrackingNo = $_POST['delete_trackingNo'];
@@ -375,7 +301,21 @@ body.dark-mode .detail-cardbox .close-btn:hover {
         } catch(e){}
       })();
     </script>
+    <style>
+      h1, h2, h3, h4, h5, h6 {
+        color: #222;
+      }
+      body.dark-mode h1, body.dark-mode h2, body.dark-mode h3, body.dark-mode h4, body.dark-mode h5, body.dark-mode h6 {
+  color: #fff;
+}
 </style>
+    <style>
+      #userEditModal .modal-content { color: #222; }
+      body.dark-mode #userEditModal .modal-content { color: #fff; background: #222; }
+      #closeUserEditModalIcon { color: #222; transition: color 0.2s; }
+      body.dark-mode #closeUserEditModalIcon { color: #fff; }
+      #closeUserEditModal:hover #closeUserEditModalIcon, #closeUserEditModal:focus #closeUserEditModalIcon { color: #dc3545; }
+    </style>
 </head>
 <body class="bg-light">
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
@@ -413,7 +353,7 @@ body.dark-mode .detail-cardbox .close-btn:hover {
 </div>
 <?php if ($tab=='arizalar'): ?>
 <div class="container">
-    <h1 class="mb-4">Main Admin Paneli</h1>
+    <h1 class="mb-4 fw-bold">Main Admin Paneli</h1>
     <?php if ($successMsg): ?>
     <div class="toast-container position-fixed top-0 end-0 p-3">
       <div class="toast align-items-center text-bg-success border-0 show" role="alert" aria-live="assertive" aria-atomic="true">
@@ -817,152 +757,87 @@ new Chart(document.getElementById('chartType'), {
         </tbody>
     </table>
 </div>
-<?php elseif ($tab=='kullanicilar'): ?>
-<?php
-$typesFile = 'types.json';
-$types = file_exists($typesFile) ? json_decode(file_get_contents($typesFile), true) : [];
-?>
-<div class="container">
-    <h1 class="mb-4">Kullanıcılar ve Yetkiler</h1>
-    <form method="post" class="row g-3 mb-4 align-items-end">
-        <div class="col-md-2">
-            <input type="text" name="username" class="form-control" placeholder="Kullanıcı Adı" required>
-        </div>
-        <div class="col-md-2">
-            <select name="role" id="role" class="form-select" required onchange="toggleFields()">
-                <option value="">Rol Seç</option>
-                <option value="MainAdmin">MainAdmin</option>
-                <option value="Admin">Admin</option>
-                <option value="TeknikPersonel">TeknikPersonel</option>
-            </select>
-        </div>
-        <div class="col-md-2" id="departmentField" style="display:none;">
-            <select name="department" id="department" class="form-select">
-                <option value="">Birim/Tür Seç</option>
-                <?php foreach ($types as $type => $subs): ?>
-                  <option value="<?= htmlspecialchars($type) ?>"><?= htmlspecialchars($type) ?></option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-        <div class="col-md-2" id="adminField" style="display:none;">
-            <select name="manager_id" id="manager_id" class="form-select" onchange="fillTechDepartment()">
-                <option value="">Bağlı Admin Seçin (isteğe bağlı)</option>
-                <?php foreach ($users as $u): ?>
-                    <?php if (in_array($u['role'], ['Admin'])): ?>
-                        <option value="<?= $u['id'] ?>" data-department="<?= htmlspecialchars($u['department'] ?? '') ?>">
-                            <?= htmlspecialchars($u['username']) ?> (<?= htmlspecialchars($u['department'] ?? '-') ?>)
-                        </option>
-                    <?php endif; ?>
-                <?php endforeach; ?>
-            </select>
-        </div>
-        <div class="col-md-2">
-            <input type="email" name="email" class="form-control" placeholder="E-posta">
-        </div>
-        <div class="col-md-2">
-            <input type="text" name="password" class="form-control" placeholder="Şifre">
-        </div>
-        <div class="col-md-2 d-grid">
-            <button type="submit" name="add_user" class="btn btn-success">Ekle</button>
-        </div>
-    </form>
-    <table class="table table-bordered table-striped align-middle">
-        <thead class="table-primary">
-        <tr>
-            <th>ID</th>
-            <th>Kullanıcı Adı</th>
-            <th>Rol</th>
-            <th>İşlemler</th>
-        </tr>
-        </thead>
-        <tbody>
-        <?php foreach ($users as $u): ?>
-            <tr>
-                <td><?= htmlspecialchars($u['id']) ?></td>
-                <td><?= htmlspecialchars($u['username']) ?></td>
-                <td><?= htmlspecialchars($u['role']) ?></td>
-                <td>
-                    <form method="post" style="display:inline-block">
-                        <input type="hidden" name="delete_id" value="<?= $u['id'] ?>">
-                        <button type="submit" name="delete_user" class="btn btn-danger btn-sm">Sil</button>
-                    </form>
-                    <form method="post" style="display:inline-block">
-                        <input type="hidden" name="update_id" value="<?= $u['id'] ?>">
-                        <input type="text" name="update_username" value="<?= htmlspecialchars($u['username']) ?>" class="form-control form-control-sm d-inline w-auto" required>
-                        <select name="update_role" class="form-select form-select-sm d-inline w-auto" required>
-                            <option value="MainAdmin" <?= $u['role']=='MainAdmin'?'selected':'' ?>>MainAdmin</option>
-                            <option value="Admin" <?= $u['role']=='Admin'?'selected':'' ?>>Admin</option>
-                            <option value="TeknikPersonel" <?= $u['role']=='TeknikPersonel'?'selected':'' ?>>TeknikPersonel</option>
-                        </select>
-                        <button type="submit" name="update_user" class="btn btn-primary btn-sm">Güncelle</button>
-                    </form>
-                </td>
-            </tr>
-        <?php endforeach; ?>
-        </tbody>
-    </table>
-</div>
-<?php elseif ($tab=='turler'): ?>
+<?php endif; ?>
+<?php if ($tab=='kullanicilar'): ?>
+    <?php include 'main_admin_kullanicilar.php'; ?>
+<?php endif; ?>
+<?php if ($tab=='turler'): ?>
 <div class="container mt-5 d-flex flex-column align-items-center justify-content-center" style="min-height:70vh;">
   <div class="card shadow-sm p-4" style="max-width: 900px; width:100%;">
-    <h2 class="mb-4 text-center text-primary"><i class="bi bi-tags"></i> Tür/Birim & Alt Tür Yönetimi</h2>
+    <h2 class="mb-4 text-center fw-bold"><i class="bi bi-tags"></i> Tür/Birim & Alt Tür Yönetimi</h2>
     <?php
-      $typesFile = 'types.json';
-      if (!file_exists($typesFile)) file_put_contents($typesFile, '{}');
-      $types = json_decode(file_get_contents($typesFile), true);
       $typeMsg = '';
-      // Tür ekle
+      // Departman ekle
       if (isset($_POST['add_type']) && !empty($_POST['type_name'])) {
         $name = trim($_POST['type_name']);
-        if (!isset($types[$name])) {
-          $types[$name] = [];
-          file_put_contents($typesFile, json_encode($types, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
-          $typeMsg = 'Tür eklendi!';
+        $stmt = $conn->prepare("SELECT COUNT(*) FROM Departments WHERE name = ?");
+        $stmt->execute([$name]);
+        if ($stmt->fetchColumn() == 0) {
+          $stmt = $conn->prepare("INSERT INTO Departments (name) VALUES (?)");
+          $stmt->execute([$name]);
+          $typeMsg = 'Tür/Birim eklendi!';
         } else {
-          $typeMsg = 'Bu tür zaten var!';
+          $typeMsg = 'Bu tür/birim zaten var!';
         }
       }
-      // Tür sil
+      // Departman sil
       if (isset($_POST['delete_type']) && !empty($_POST['delete_type_name'])) {
         $name = $_POST['delete_type_name'];
-        // Silinmek istenen tür/birime atanmış admin var mı kontrol et
-        $usersList = file_exists('users.json') ? json_decode(file_get_contents('users.json'), true) : [];
-        $assignedAdmin = false;
-        foreach ($usersList as $u) {
-          if (in_array($u['role'], ['Admin']) && isset($u['department']) && $u['department'] === $name) {
-            $assignedAdmin = true;
-            break;
-          }
-        }
-        if ($assignedAdmin) {
+        // Atanmış admin var mı kontrol et
+        $stmt = $conn->prepare("SELECT COUNT(*) FROM Users WHERE department_id = (SELECT id FROM Departments WHERE name = ?)");
+        $stmt->execute([$name]);
+        if ($stmt->fetchColumn() > 0) {
           $typeMsg = 'Bu tür/birime atanmış bir admin olduğu için silinemez!';
-        } else if (isset($types[$name])) {
-          unset($types[$name]);
-          file_put_contents($typesFile, json_encode($types, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
-          $typeMsg = 'Tür silindi!';
+        } else {
+          // Alt türleri de sil
+          $stmt = $conn->prepare("DELETE FROM SubDepartments WHERE department_id = (SELECT id FROM Departments WHERE name = ?)");
+          $stmt->execute([$name]);
+          $stmt = $conn->prepare("DELETE FROM Departments WHERE name = ?");
+          $stmt->execute([$name]);
+          $typeMsg = 'Tür/Birim silindi!';
         }
       }
       // Alt tür ekle
       if (isset($_POST['add_subtype']) && !empty($_POST['subtype_name']) && !empty($_POST['parent_type'])) {
         $parent = $_POST['parent_type'];
         $sub = trim($_POST['subtype_name']);
-        if (isset($types[$parent]) && !in_array($sub, $types[$parent])) {
-          $types[$parent][] = $sub;
-          file_put_contents($typesFile, json_encode($types, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+        $stmt = $conn->prepare("SELECT id FROM Departments WHERE name = ?");
+        $stmt->execute([$parent]);
+        $deptId = $stmt->fetchColumn();
+        if ($deptId) {
+          $stmt = $conn->prepare("SELECT COUNT(*) FROM SubDepartments WHERE name = ? AND department_id = ?");
+          $stmt->execute([$sub, $deptId]);
+          if ($stmt->fetchColumn() == 0) {
+            $stmt = $conn->prepare("INSERT INTO SubDepartments (name, department_id) VALUES (?, ?)");
+            $stmt->execute([$sub, $deptId]);
           $typeMsg = 'Alt tür eklendi!';
         } else {
           $typeMsg = 'Bu alt tür zaten var!';
+          }
         }
       }
       // Alt tür sil
       if (isset($_POST['delete_subtype']) && !empty($_POST['delete_subtype_name']) && !empty($_POST['delete_subtype_parent'])) {
         $parent = $_POST['delete_subtype_parent'];
         $sub = $_POST['delete_subtype_name'];
-        if (isset($types[$parent])) {
-          $types[$parent] = array_values(array_diff($types[$parent], [$sub]));
-          file_put_contents($typesFile, json_encode($types, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+        $stmt = $conn->prepare("SELECT id FROM Departments WHERE name = ?");
+        $stmt->execute([$parent]);
+        $deptId = $stmt->fetchColumn();
+        if ($deptId) {
+          $stmt = $conn->prepare("DELETE FROM SubDepartments WHERE name = ? AND department_id = ?");
+          $stmt->execute([$sub, $deptId]);
           $typeMsg = 'Alt tür silindi!';
         }
+      }
+      // Departman ve alt türleri çek
+      $departments = [];
+      $stmt = $conn->query("SELECT id, name FROM Departments ORDER BY name");
+      while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $row['subdepartments'] = [];
+        $stmt2 = $conn->prepare("SELECT name FROM SubDepartments WHERE department_id = ? ORDER BY name");
+        $stmt2->execute([$row['id']]);
+        $row['subdepartments'] = $stmt2->fetchAll(PDO::FETCH_COLUMN);
+        $departments[] = $row;
       }
     ?>
     <?php if ($typeMsg): ?>
@@ -979,8 +854,8 @@ $types = file_exists($typesFile) ? json_decode(file_get_contents($typesFile), tr
         <form method="post" class="flex-grow-1 d-flex gap-2 align-items-end justify-content-center">
           <select name="parent_type" class="form-select flex-grow-1" required style="max-width:220px;">
             <option value="">Tür/Birim Seç</option>
-            <?php foreach ($types as $t => $subs): ?>
-              <option value="<?= htmlspecialchars($t) ?>"><?= htmlspecialchars($t) ?></option>
+            <?php foreach ($departments as $d): ?>
+              <option value="<?= htmlspecialchars($d['name']) ?>"><?= htmlspecialchars($d['name']) ?></option>
             <?php endforeach; ?>
           </select>
           <input type="text" name="subtype_name" class="form-control flex-grow-1" placeholder="Yeni Alt Tür" required>
@@ -992,24 +867,24 @@ $types = file_exists($typesFile) ? json_decode(file_get_contents($typesFile), tr
       <div class="col-12">
         <div class="card shadow-sm">
           <div class="card-body">
-            <h5 class="mb-3 text-center text-secondary"><i class="bi bi-list-ul"></i> Mevcut Türler ve Alt Türler</h5>
+            <h5 class="mb-3 text-center fw-bold"><i class="bi bi-list-ul"></i> Mevcut Türler ve Alt Türler</h5>
             <ul class="list-group list-group-flush">
-              <?php foreach ($types as $t => $subs): ?>
+              <?php foreach ($departments as $d): ?>
                 <li class="list-group-item">
                   <div class="d-flex justify-content-between align-items-center">
-                    <span class="fw-bold text-primary"><i class="bi bi-tag"></i> <?= htmlspecialchars($t) ?></span>
+                    <span class="fw-bold text-primary"><i class="bi bi-tag"></i> <?= htmlspecialchars($d['name']) ?></span>
                     <form method="post" style="display:inline-block">
-                      <input type="hidden" name="delete_type_name" value="<?= htmlspecialchars($t) ?>">
+                      <input type="hidden" name="delete_type_name" value="<?= htmlspecialchars($d['name']) ?>">
                       <button type="submit" name="delete_type" class="btn btn-danger btn-sm" onclick="return confirm('Bu türü silmek istediğinize emin misiniz?')"><i class="bi bi-trash"></i> Sil</button>
                     </form>
                   </div>
-                  <?php if ($subs): ?>
+                  <?php if ($d['subdepartments']): ?>
                     <ul class="list-group mt-2 ms-4">
-                      <?php foreach ($subs as $sub): ?>
+                      <?php foreach ($d['subdepartments'] as $sub): ?>
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                           <span><i class="bi bi-chevron-right"></i> <?= htmlspecialchars($sub) ?></span>
                           <form method="post" style="display:inline-block">
-                            <input type="hidden" name="delete_subtype_parent" value="<?= htmlspecialchars($t) ?>">
+                            <input type="hidden" name="delete_subtype_parent" value="<?= htmlspecialchars($d['name']) ?>">
                             <input type="hidden" name="delete_subtype_name" value="<?= htmlspecialchars($sub) ?>">
                             <button type="submit" name="delete_subtype" class="btn btn-outline-danger btn-sm"><i class="bi bi-x-circle"></i> Sil</button>
                           </form>
@@ -1410,6 +1285,13 @@ toastElList.forEach(function (toastEl) {
     });
   }
 })();
+</script>
+<script>
+// ... existing code ...
++userEditModal.addEventListener('mousedown', function(e) {
++  if (e.target === userEditModal) userEditModal.style.display = 'none';
++});
+// ... existing code ...
 </script>
 </body>
 </html> 

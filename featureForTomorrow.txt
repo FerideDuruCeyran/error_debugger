@@ -103,6 +103,19 @@ Extra Features:
 - This feature is considered an extra and is not part of the main workflow, but adds value for communication and context on fault reports.
 - In the future, users will be able to edit their own note on a fault. 
 
+Kullanıcıyı Düzenle (User Edit) Popup - TODOs & Notes:
+
+- Currently, clicking the transparent background closes the popup. Consider making this optional or configurable, or disabling it for better UX.
+- The popup menu needs further testing for edge cases (e.g. invalid input, rapid open/close, accessibility, mobile responsiveness).
+- Test all form validation and error messages.
+- Consider adding a confirmation dialog before saving changes.
+- Add loading indicators or feedback for slow network/database operations.
+- Make sure the popup is accessible via keyboard (tab, esc to close, etc.).
+- Review and improve focus management when the popup opens/closes.
+- Test on all major browsers and mobile devices.
+- Consider adding audit logging for user edits.
+- Review security: ensure only MainAdmin can edit users, and all input is sanitized.
+
 MainAdmin User Management Feature:
 ----------------------------------
 - Create a new role: 'MainAdmin'.
