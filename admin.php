@@ -549,12 +549,31 @@ if (file_exists(PROBLEM_LOG_FILE)) {
       opacity: 1;
     }
     </style>
+    <style>
+    html, body {
+      background: #181a1b !important;
+      color: #eee;
+      transition: none !important;
+    }
+  </style>
+  <script>
+    (function() {
+      try {
+        var userPref = localStorage.getItem('darkMode');
+        if (userPref === '1') {
+          document.documentElement.classList.add('dark-mode');
+        } else if (userPref === null && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          document.documentElement.classList.add('dark-mode');
+        }
+      } catch(e){}
+    })();
+  </script>
 </head>
 <body class="bg-light">
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
   <div class="container-fluid">
-    <a class="navbar-brand d-flex align-items-center" href="<?php echo htmlspecialchars($panel); ?>">
-      <img src="https://upload.wikimedia.org/wikipedia/tr/d/dc/Akdeniz_%C3%9Cniversitesi_logosu.IMG_0838.png" class="akdeniz-logo" alt="Akdeniz Üniversitesi">
+    <a class="navbar-brand d-flex align-items-center" href="index.php">
+      <img src="uploads/Akdeniz_Üniversitesi_logosu.IMG_0838.png" class="akdeniz-logo" alt="Akdeniz Üniversitesi" style="width:56px;height:56px;border-radius:50%;background:#fff;">
       <span>Akdeniz Üniversitesi</span>
     </a>
     <div class="d-flex ms-auto align-items-center gap-2">
@@ -1140,16 +1159,26 @@ if (feedbackForm) {
 function setDarkMode(on) {
   if (on) {
     document.body.classList.add('dark-mode');
-    document.getElementById('darkModeToggle').innerHTML = '<i class="bi bi-brightness-high"></i>';
-    document.getElementById('floatingDarkToggle').innerHTML = '<i class="bi bi-brightness-high"></i>';
+    darkToggle.innerHTML = '<i class="bi bi-brightness-high"></i>';
     localStorage.setItem('darkMode', '1');
   } else {
     document.body.classList.remove('dark-mode');
-    document.getElementById('darkModeToggle').innerHTML = '<i class="bi bi-moon"></i>';
-    document.getElementById('floatingDarkToggle').innerHTML = '<i class="bi bi-moon"></i>';
+    darkToggle.innerHTML = '<i class="bi bi-moon"></i>';
     localStorage.setItem('darkMode', '0');
   }
 }
+// Sayfa yüklenince:
+const userPref = localStorage.getItem('darkMode');
+if (userPref === '1') {
+  setDarkMode(true);
+} else if (userPref === '0') {
+  setDarkMode(false);
+} else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+  setDarkMode(true);
+} else {
+  setDarkMode(false);
+}
+darkToggle.onclick = () => setDarkMode(!document.body.classList.contains('dark-mode'));
 document.addEventListener('DOMContentLoaded', function() {
   // Navbar butonu
   var darkToggle = document.getElementById('darkModeToggle');
@@ -1171,6 +1200,13 @@ document.addEventListener('DOMContentLoaded', function() {
   // Mobilde floating butonu göster
   if (window.innerWidth < 600) {
     floatToggle.style.display = 'flex';
+  }
+  // Sistem dark mode tercihine göre otomatik başlat
+  if (localStorage.getItem('darkMode') === null) {
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      document.body.classList.add('dark-mode');
+      darkToggle.innerHTML = '<i class="bi bi-brightness-high"></i>';
+    }
   }
 });
 </script>
