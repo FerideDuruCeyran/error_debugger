@@ -585,14 +585,72 @@ if (file_exists(PROBLEM_LOG_FILE)) {
   </div>
   <!-- Modern Dashboard Kartları kaldırıldı, sadece klasik başlık ve filtre kalacak -->
 </div>
-<?php if ($notification): ?>
-<div class="container mt-2">
-  <div class="alert alert-info alert-dismissible fade show" role="alert">
-    <?= htmlspecialchars($notification) ?>
-    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>
-  </div>
-</div>
-<?php endif; ?>
+
+<?php
+// --- Mesajlaşma için gerekli kodlar (messages.php'den alınanlar) ---
+$usersFile = 'users.json';
+$users = file_exists($usersFile) ? json_decode(file_get_contents($usersFile), true) : [];
+$currentUser = null;
+foreach ($users as $u) {
+    if ($u['username'] === ($_SESSION['user'] ?? '')) {
+        $currentUser = $u;
+        break;
+    }
+}
+$role = $currentUser['role'] ?? '';
+$allUsers = array_column($users, 'username');
+$messagesFile = 'messages.json';
+if (!file_exists($messagesFile)) file_put_contents($messagesFile, '[]');
+$messages = json_decode(file_get_contents($messagesFile), true);
+$toList = [];
+if ($role === 'Admin') {
+    foreach ($users as $u) {
+        if ($u['role'] === 'TeknikPersonel' && $u['department'] === $currentUser['department']) {
+            $toList[] = $u;
+        }
+    }
+    foreach ($users as $u) {
+        if ($u['role'] === 'Admin' && $u['username'] !== $currentUser['username']) {
+            $toList[] = $u;
+        }
+    }
+    foreach ($users as $u) {
+        if (in_array($u['role'], ['MainAdmin', 'GenelAdmin'])) {
+            $toList[] = $u;
+        }
+    }
+}
+// Sohbet edilen kullanıcıları bul
+$myUsername = $currentUser['username'] ?? '';
+$chattedUsers = [];
+foreach ($messages as $msg) {
+    if ($msg['from'] === $myUsername && $msg['to'] !== $myUsername) {
+        $chattedUsers[$msg['to']] = true;
+    }
+    if ($msg['to'] === $myUsername && $msg['from'] !== $myUsername) {
+        $chattedUsers[$msg['from']] = true;
+    }
+}
+$chattedUserObjs = [];
+foreach ($users as $u) {
+    if (isset($chattedUsers[$u['username']])) {
+        $chattedUserObjs[] = $u;
+    }
+}
+$activeUser = $_GET['user'] ?? ($chattedUserObjs[0]['username'] ?? null);
+$chatHistory = [];
+if ($activeUser) {
+    foreach ($messages as $m) {
+        if (($m['from'] === $currentUser['username'] && $m['to'] === $activeUser) ||
+            ($m['from'] === $activeUser && $m['to'] === $currentUser['username'])) {
+            $chatHistory[] = $m;
+        }
+    }
+}
+?>
+<!-- ADMIN MESAJLAŞMA ALANI BAŞLANGIÇ -->
+<!-- Bu arayüzü ve ilgili PHP kodlarını tamamen kaldır -->
+<!-- ADMIN MESAJLAŞMA ALANI BAŞLANGIÇ -->
 <div class="container">
     <form method="get" class="row g-3 mb-4" id="filterForm">
         <div class="col-md-2">
@@ -721,6 +779,7 @@ if (file_exists(PROBLEM_LOG_FILE)) {
         </div>
         <div class="card-body assign-tech-body" style="padding: 1.2rem 1.2rem 0.7rem 1.2rem;">
             <form method="post" class="w-100" id="assignTechForm">
+                <input type="hidden" name="assign_tech" value="1">
                 <div class="row g-3 align-items-center">
                     <div class="col-12 col-md-4">
                         <label class="form-label fw-bold mb-1"><i class="bi bi-hash"></i> Arıza Takip No</label>
@@ -798,8 +857,21 @@ if (file_exists(PROBLEM_LOG_FILE)) {
     ?>
     <tr>
         <td><i class="bi bi-building text-muted"></i> <?= htmlspecialchars($p['department']) ?></td>
-        <td class="text-center"><span class="badge bg-secondary"><?= htmlspecialchars(getFaultTypeName($p['faultType'], $faultTypes)) ?></span></td>
-        <td class="text-center"><?php $subId = $p['subFaultType'] ?? null; echo $subId && isset($subFaultTypes[$subId]) ? htmlspecialchars($subFaultTypes[$subId]) : '-'; ?></td>
+        <td class="text-center">
+  <?php if (isset($p['faultType']) && $p['faultType'] !== '-' && isset($faultTypes[$p['faultType']])): ?>
+    <span class="badge bg-secondary"> <?= htmlspecialchars(getFaultTypeName($p['faultType'], $faultTypes)) ?> </span>
+  <?php else: ?>
+    <span class="badge bg-light text-muted"> - </span>
+  <?php endif; ?>
+</td>
+        <td class="text-center">
+  <?php $subId = $p['subFaultType'] ?? null; ?>
+  <?php if ($subId && $subId !== '-' && isset($subFaultTypes[$subId])): ?>
+    <span class="badge bg-info"> <?= htmlspecialchars($subFaultTypes[$subId]) ?> </span>
+  <?php else: ?>
+    <span class="badge bg-light text-muted"> - </span>
+  <?php endif; ?>
+</td>
         <td class="text-center fw-bold text-primary"><?= htmlspecialchars($p['trackingNo']) ?></td>
         <td>
   <?php 
@@ -848,16 +920,19 @@ if (file_exists(PROBLEM_LOG_FILE)) {
               </span>
             </span>
             <?php if (!empty($p['message'])): ?>
-            <span class="msg-icon-wrap position-relative" style="margin-left:10px;vertical-align:middle;">
-              <i class="bi bi-chat-left-text-fill text-primary"
-                 style="font-size:1.2em;cursor:pointer;"
-                 data-tracking="<?= htmlspecialchars($p['trackingNo']) ?>"
-                 onmouseenter="showMsgBubble(this, problemMessages[this.getAttribute('data-tracking')])"
-                 onmouseleave="msgBubbleTimeout = setTimeout(hideMsgBubble, 120);"
-                 onclick="toggleMsgBubble(this, problemMessages[this.getAttribute('data-tracking')])"
-              ></i>
-            </span>
-            <?php endif; ?>
+<span class="msg-icon-wrap position-relative" style="margin-left:10px;vertical-align:middle;">
+  <i class="bi bi-chat-left-text-fill text-primary"
+     style="font-size:1.2em;cursor:pointer;"
+     data-bs-toggle="tooltip"
+     data-bs-placement="top"
+     title="<?= htmlspecialchars($p['message']) ?>"
+     data-tracking="<?= htmlspecialchars($p['trackingNo']) ?>"
+     onmouseenter="showMsgBubble(this, problemMessages[this.getAttribute('data-tracking')])"
+     onmouseleave="msgBubbleTimeout = setTimeout(hideMsgBubble, 120);"
+     onclick="toggleMsgBubble(this, problemMessages[this.getAttribute('data-tracking')])"
+  ></i>
+</span>
+<?php endif; ?>
         </td>
         <td>
             <?php if (!empty($assignedTech)): ?>

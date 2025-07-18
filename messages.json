@@ -89,5 +89,12 @@
         "message": "merhaba",
         "date": "2025-07-17 10:59:29",
         "read": true
+    },
+    {
+        "from": "mainadmin",
+        "to": "teknikservis_mudur",
+        "message": "hi",
+        "date": "2025-07-18 09:43:59",
+        "read": true
     }
 ]

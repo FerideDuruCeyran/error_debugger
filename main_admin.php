@@ -456,6 +456,7 @@ body.dark-mode .form-select:focus, body.dark-mode .form-control:focus {
         <li class="nav-item flex-fill text-center"><a class="nav-link<?= $tab=='teknik'?' active':'' ?>" href="main_admin.php?tab=teknik"><i class="bi bi-person-gear"></i> Teknik Personeller</a></li>
         <li class="nav-item flex-fill text-center"><a class="nav-link<?= $tab=='kullanicilar'?' active':'' ?>" href="main_admin.php?tab=kullanicilar"><i class="bi bi-people"></i> Kullanıcılar</a></li>
         <li class="nav-item flex-fill text-center"><a class="nav-link<?= $tab=='turler'?' active':'' ?>" href="main_admin.php?tab=turler"><i class="bi bi-tags"></i> Tür/Birim & Alt Tür Yönetimi</a></li>
+        <li class="nav-item flex-fill text-center"><a class="nav-link<?= $tab=='loglar'?' active':'' ?>" href="main_admin.php?tab=loglar"><i class="bi bi-list-columns"></i> Kullanıcı Logları</a></li>
       </ul>
     </div>
   </div>
@@ -1076,6 +1077,62 @@ $types = file_exists($typesFile) ? json_decode(file_get_contents($typesFile), tr
   </div>
 </div>
 <?php endif; ?>
+<?php if ($tab=='loglar'): ?>
+<div class="container mt-4 mb-5">
+  <div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0"><i class="bi bi-list-columns"></i> Kullanıcı Giriş Logları</h5>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-bordered table-striped align-middle mb-0">
+          <thead class="table-primary">
+            <tr>
+              <th>Kullanıcı Adı</th>
+              <th>Rol</th>
+              <th>Son Giriş Zamanı</th>
+              <th>Email</th>
+              <th>IP</th>
+              <th>Tarayıcı</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php
+            $usersFile = 'users.json';
+            $users = file_exists($usersFile) ? json_decode(file_get_contents($usersFile), true) : [];
+            $problemsFile = 'problems.log';
+            $lastLog = [];
+            if (file_exists($problemsFile)) {
+              $lines = file($problemsFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+              foreach ($lines as $line) {
+                $entry = json_decode($line, true);
+                if ($entry && isset($entry['user'])) {
+                  $uname = $entry['user'];
+                  if (!isset($lastLog[$uname]) || strtotime($entry['date'] ?? '1970-01-01') > strtotime($lastLog[$uname]['date'] ?? '1970-01-01')) {
+                    $lastLog[$uname] = $entry;
+                  }
+                }
+              }
+            }
+            foreach ($users as $u):
+              $log = $lastLog[$u['username']] ?? null;
+            ?>
+              <tr>
+                <td><?= htmlspecialchars($u['username']) ?></td>
+                <td><?= htmlspecialchars($u['role']) ?></td>
+                <td><?= htmlspecialchars($u['last_login'] ?? ($log['date'] ?? '-')) ?></td>
+                <td><?= htmlspecialchars($u['email'] ?? '-') ?></td>
+                <td><?= htmlspecialchars($u['last_ip'] ?? ($log['ip'] ?? '-')) ?></td>
+                <td><?= htmlspecialchars($u['last_agent'] ?? ($log['userAgent'] ?? '-')) ?></td>
+              </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
 <!-- Bildirim Merkezi Modal -->
 <div class="modal fade" id="notifModal" tabindex="-1" aria-labelledby="notifModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-end">
@@ -1288,7 +1345,9 @@ function resetFilters() {
 </script>
 <script>
 function toggleFields() {
-    var role = document.getElementById('role').value;
+    var roleEl = document.getElementById('role');
+    if (!roleEl) return;
+    var role = roleEl.value;
     var departmentField = document.getElementById('departmentField');
     var adminField = document.getElementById('adminField');
     if (role === 'Admin') {
@@ -1302,7 +1361,10 @@ function toggleFields() {
         adminField.style.display = 'none';
     }
 }
-document.getElementById('role').addEventListener('change', toggleFields);
+var roleEl = document.getElementById('role');
+if (roleEl) {
+  roleEl.addEventListener('change', toggleFields);
+}
 document.addEventListener('DOMContentLoaded', toggleFields);
 function fillTechDepartment() {
     var adminSelect = document.getElementById('manager_id');
@@ -1445,5 +1507,83 @@ toastElList.forEach(function (toastEl) {
   }
 })();
 </script>
+<?php if ($currentUser && in_array($currentUser['role'], ['MainAdmin', 'GenelAdmin'])): ?>
+<div class="container mt-5 mb-5">
+  <ul class="nav nav-tabs" id="adminTab" role="tablist">
+    <!-- <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="panel-tab" data-bs-toggle="tab" data-bs-target="#panelTabPane" type="button" role="tab">Panel</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="logs-tab" data-bs-toggle="tab" data-bs-target="#logsTabPane" type="button" role="tab">Kullanıcı Logları</button>
+    </li> -->
+  </ul>
+  <div class="tab-content" id="adminTabContent">
+    <div class="tab-pane fade show active" id="panelTabPane" role="tabpanel">
+      <!-- Buraya mevcut panel içeriği gelecek (otomatik olarak eski kod devam edecek) -->
+    </div>
+    <div class="tab-pane fade" id="logsTabPane" role="tabpanel">
+      <div class="card shadow-sm mt-4">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0"><i class="bi bi-list-columns"></i> Kullanıcı Giriş Logları</h5>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-bordered table-striped align-middle mb-0">
+              <thead class="table-primary">
+                <tr>
+                  <th>Kullanıcı Adı</th>
+                  <th>Rol</th>
+                  <th>Son Giriş Zamanı</th>
+                  <th>Email</th>
+                  <th>IP</th>
+                  <th>Tarayıcı</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php
+                $usersFile = 'users.json';
+                $users = file_exists($usersFile) ? json_decode(file_get_contents($usersFile), true) : [];
+                $problemsFile = 'problems.log';
+                $lastLog = [];
+                if (file_exists($problemsFile)) {
+                  $lines = file($problemsFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+                  foreach ($lines as $line) {
+                    $entry = json_decode($line, true);
+                    if ($entry && isset($entry['user'])) {
+                      $uname = $entry['user'];
+                      if (!isset($lastLog[$uname]) || strtotime($entry['date'] ?? '1970-01-01') > strtotime($lastLog[$uname]['date'] ?? '1970-01-01')) {
+                        $lastLog[$uname] = $entry;
+                      }
+                    }
+                  }
+                }
+                foreach ($users as $u):
+                  $log = $lastLog[$u['username']] ?? null;
+                ?>
+                  <tr>
+                    <td><?= htmlspecialchars($u['username']) ?></td>
+                    <td><?= htmlspecialchars($u['role']) ?></td>
+                    <td><?= htmlspecialchars($u['last_login'] ?? ($log['date'] ?? '-')) ?></td>
+                    <td><?= htmlspecialchars($u['email'] ?? '-') ?></td>
+                    <td><?= htmlspecialchars($u['last_ip'] ?? ($log['ip'] ?? '-')) ?></td>
+                    <td><?= htmlspecialchars($u['last_agent'] ?? ($log['userAgent'] ?? '-')) ?></td>
+                  </tr>
+                <?php endforeach; ?>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  var firstTabEl = document.querySelector('#adminTab button[data-bs-target="#panelTabPane"]');
+  if (firstTabEl) {
+    var tab = new bootstrap.Tab(firstTabEl);
+    tab.show();
+  }
+</script>
+<?php endif; ?>
 </body>
 </html> 

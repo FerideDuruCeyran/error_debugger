@@ -15,13 +15,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     if ($foundUser) {
         $_SESSION['user'] = $foundUser['username'];
-        // last_login güncelle
+        // Son giriş zamanını, IP ve tarayıcıyı kaydet
+        $usersFile = 'users.json';
+        $users = file_exists($usersFile) ? json_decode(file_get_contents($usersFile), true) : [];
         foreach ($users as &$u) {
             if ($u['username'] === $foundUser['username']) {
                 $u['last_login'] = date('Y-m-d H:i:s');
-                break;
+                $u['last_ip'] = $_SERVER['REMOTE_ADDR'] ?? '';
+                $u['last_agent'] = $_SERVER['HTTP_USER_AGENT'] ?? '';
             }
         }
+        unset($u);
         file_put_contents($usersFile, json_encode($users, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
         // Role göre yönlendirme
         if ($foundUser['role'] === 'MainAdmin' || $foundUser['role'] === 'GenelAdmin') {
